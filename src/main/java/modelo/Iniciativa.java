@@ -2,10 +2,16 @@ package modelo;
 
 import java.sql.Date;
 import java.sql.Time;
-import java.sql.Timestamp;
+
 /**
- * Descripción: Clase Modelo de Iniciativa
- * @author Solis Geovanny
+ * Clase Modelo que representa una Iniciativa o Planificación Ambiental en el
+ * sistema EcoVida. Esta entidad actúa como un POJO (Plain Old Java Object) para
+ * el mapeo objeto-relacional (ORM) con la tabla {@code INICIATIVA} de la base
+ * de datos, encapsulando tanto las claves foráneas como los atributos
+ * descriptivos cargados mediante consultas complejas.
+ *
+ * * @author Solis Caballero Geovanny Andrés
+ * @version 1.2
  */
 public class Iniciativa {
     
@@ -27,6 +33,10 @@ public class Iniciativa {
     private String nombreGestion;
     private int totalParticipantes;
     
+    /**
+     * Constructor por defecto de la clase Iniciativa. Requerido para la
+     * instanciación dinámica en las estructuras de colecciones y capas DAO.
+     */
     public Iniciativa (){}
     
     public String getNombreSector() {

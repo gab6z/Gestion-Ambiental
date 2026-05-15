@@ -7,11 +7,31 @@ import modelo.Iniciativa;
 import utilidades.ConexionDB;
 
 /**
+ * Componente de Acceso a Datos (DAO) para la entidad {@link Iniciativa} en el
+ * sistema EcoVida. Proporciona los métodos CRUD (Crear, Leer, Actualizar,
+ * Eliminar) y operaciones transaccionales específicas para interactuar con las
+ * tablas {@code INICIATIVA} y {@code PARTICIPACION} en MySQL.
+ * <p>
+ * Implementa optimizaciones como consultas por lotes (Batch) y subconsultas en
+ * tiempo real para el cálculo dinámico de métricas de vinculación.
+ * </p>
  *
- * @author Solis Geovanny
+ * * @author Solis Caballero Geovanny Andrés
+ * @version 1.3
  */
-public class IniciativaDAO {
-
+public class IniciativaDAO {  
+    /**
+     * Inserta un nuevo registro de iniciativa ambiental en la base de datos.
+     * Recupera la clave primaria auto-incrementable generada por el motor
+     * relacional.
+     *
+     * * @param ini El objeto modelo {@link Iniciativa} que contiene la
+     * información a persistir.
+     * @return El identificador numérico (ID) asignado automáticamente por la
+     * base de datos.
+     * @throws SQLException Si ocurre una anomalía o fallo en la comunicación
+     * con el servidor SQL.
+     */
     public int insertar(Iniciativa ini) throws SQLException {
         String sql = "INSERT INTO INICIATIVA (id_sector, id_tarea, id_gestion, titulo_planificacion, "
                 + "descripcion_logistica, fecha_ejecucion, hora_inicio, hora_fin, "
@@ -51,7 +71,18 @@ public class IniciativaDAO {
         }
         return idGenerado;
     }
-
+    
+    /**
+     * Recupera el listado completo de iniciativas registradas junto con sus
+     * relaciones. Realiza acoplamientos (LEFT JOIN) para obtener los nombres
+     * descriptivos de sectores, tareas y entidades, e incluye una subconsulta
+     * que computa en tiempo real el total de inscritos.
+     *
+     * * @return Una colección {@link List} de objetos {@link Iniciativa}
+     * ordenados por fecha de creación descensional.
+     * @throws SQLException Si el motor de base de datos no puede procesar la
+     * consulta estructurada.
+     */
     public List<Iniciativa> listarTodas() throws SQLException {
         List<Iniciativa> lista = new ArrayList<>();
         String sql = "SELECT i.*, s.nombre_zona, t.nombre_tarea, g.nombre_entidad, "
@@ -97,7 +128,17 @@ public class IniciativaDAO {
         }
         return lista;
     }
-
+    
+    /**
+     * Modifica los datos existentes de una iniciativa específica basándose en
+     * su ID único. Actualiza tanto la información de planificación como los
+     * estados del módulo.
+     *
+     * * @param ini El objeto {@link Iniciativa} con los datos actualizados a
+     * persistir.
+     * @throws SQLException Si los tipos de datos no coinciden o se rompe una
+     * restricción de integridad.
+     */
     public void actualizar(Iniciativa ini) throws SQLException {
         String sql = "UPDATE INICIATIVA SET id_sector=?, id_tarea=?, id_gestion=?, titulo_planificacion=?, "
                 + "descripcion_logistica=?, fecha_ejecucion=?, hora_inicio=?, hora_fin=?, "
@@ -128,7 +169,17 @@ public class IniciativaDAO {
             ConexionDB.cerrar(cn);
         }
     }
-
+    
+    /**
+     * Remueve físicamente una iniciativa de la base de datos a través de su
+     * identificador.
+     *
+     * * @param idIniciativa Identificador único de la iniciativa a suprimir.
+     * @return {@code true} si la operación eliminó el registro exitosamente;
+     * {@code false} en caso contrario.
+     * @throws SQLException Si el registro está protegido por restricciones de
+     * clave foránea activas.
+     */
     public boolean eliminar(int idIniciativa) throws SQLException {
         String sql = "DELETE FROM INICIATIVA WHERE id_iniciativa = ?";
         Connection cn = null;
@@ -144,16 +195,26 @@ public class IniciativaDAO {
         }
     }
     
-    // --- MÉTODOS CORREGIDOS (Cambio de id_usuario a id_voluntario) ---
-
+    /**
+     * Registra de forma masiva la asignación de múltiples voluntarios a una
+     * iniciativa. Desactiva temporalmente el auto-commit para agrupar las
+     * inserciones en un único bloque transaccional, garantizando la
+     * consistencia de los datos bajo operaciones relacionales seguras.
+     *
+     * * @param idIniciativa Identificador único de la iniciativa a la cual
+     * vincular el personal.
+     * @param idsVoluntarios Lista de identificadores (IDs) de los voluntarios
+     * seleccionados.
+     * @throws SQLException Si falla la inserción masiva o se requiere un
+     * rollback automático.
+     */
     public void asignarVoluntarios(int idIniciativa, List<Integer> idsVoluntarios) throws SQLException {
-        // CORREGIDO: Ahora usa id_voluntario
         String sql = "INSERT INTO PARTICIPACION (id_voluntario, id_iniciativa, estado) VALUES (?, ?, 'pendiente')";
         Connection cn = null;
         PreparedStatement ps = null;
         try {
             cn = ConexionDB.getConnection();
-            cn.setAutoCommit(false); // Para insertar varios de golpe 
+            cn.setAutoCommit(false);
             ps = cn.prepareStatement(sql);
             for (Integer idVol : idsVoluntarios) {
                 ps.setInt(1, idVol);
@@ -168,8 +229,16 @@ public class IniciativaDAO {
         }
     }
     
+    /**
+     * Consulta y extrae todos los identificadores de los voluntarios
+     * actualmente asignados a una iniciativa.
+     *
+     * * @param idIniciativa Identificador numérico de la iniciativa a auditar.
+     * @return Una lista {@link List} con los IDs correspondientes de los
+     * voluntarios participantes.
+     * @throws SQLException Si falla la ejecución de la lectura relacional.
+     */
     public List<Integer> obtenerIdsVoluntarios(int idIniciativa) throws SQLException {
-        // CORREGIDO: Ahora selecciona id_voluntario
         String sql = "SELECT id_voluntario FROM PARTICIPACION WHERE id_iniciativa = ?";
         List<Integer> ids = new ArrayList<>();
         Connection cn = null;
@@ -181,7 +250,7 @@ public class IniciativaDAO {
             ps.setInt(1, idIniciativa);
             rs = ps.executeQuery();
             while (rs.next()) {
-                ids.add(rs.getInt("id_voluntario")); // Extrae la columna correcta
+                ids.add(rs.getInt("id_voluntario"));
             }
         } finally {
             ConexionDB.cerrar(rs, ps, cn);
@@ -189,6 +258,16 @@ public class IniciativaDAO {
         return ids;
     }
     
+    /**
+     * Elimina todos los registros de participación vinculados a una iniciativa
+     * específica. Generalmente utilizado como paso previo a una actualización
+     * masiva de asignaciones.
+     *
+     * * @param idIniciativa Identificador único de la iniciativa cuyas
+     * relaciones serán removidas.
+     * @throws SQLException Si ocurre un error de truncado o bloqueo en la tabla
+     * intermedia.
+     */
     public void eliminarParticipaciones(int idIniciativa) throws SQLException {
         String sql = "DELETE FROM PARTICIPACION WHERE id_iniciativa = ?";
         Connection cn = null;
@@ -203,7 +282,18 @@ public class IniciativaDAO {
             ConexionDB.cerrar(cn);
         }
     }
-
+    
+    /**
+     * Recupera exclusivamente los IDs de las iniciativas a las que se ha
+     * inscrito un voluntario específico. Optimiza las consultas mediante el uso
+     * de la cláusula estructurada {@code try-with-resources}.
+     *
+     * * @param idVoluntario Identificador único del voluntario logueado.
+     * @return Una colección {@link List} que contiene los identificadores de
+     * sus iniciativas asignadas.
+     * @throws SQLException Si la conexión falla o el query no puede resolverse
+     * correctamente.
+     */
     public List<Integer> obtenerMisIniciativas(int idVoluntario) throws SQLException {
         List<Integer> ids = new ArrayList<>();
         String sql = "SELECT id_iniciativa FROM PARTICIPACION WHERE id_voluntario = ?";

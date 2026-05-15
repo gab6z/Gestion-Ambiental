@@ -11,13 +11,25 @@ import javax.swing.table.DefaultTableModel;
 import modelo.Gestion;
 
 /**
- * GUI para la Planificación de Iniciativas Ambientales.
+ * Panel de Interfaz Gráfica (Vista) que representa el formulario de
+ * Planificación de Iniciativas. Proporciona el entorno visual (GUI) necesario
+ * para que el Administrador gestione el ciclo de vida de las planificaciones
+ * del sistema EcoVida.
+ * <p>
+ * Incorpora un diseño híbrido utilizando {@link GridBagLayout} para los campos
+ * estructurados, contenedores dinámicos basados en {@link BoxLayout} para
+ * listas interactivas de voluntarios y un mapeo síncrono bidireccional entre la
+ * tabla {@link JTable} y el formulario físico.
+ * </p>
  *
- * @author Solis Geovanny
+ * * @author Solis Caballero Geovanny Andrés
+ * @version 1.3
  */
 public class IniciativaPnl extends JPanel {
 
-    // Componentes del Formulario
+    /**
+     * Componentes del Formulario
+     */
     private JTextField txtTitulo;
     private JTextArea txtLogistica;
     private JComboBox<Sector> cmbSector;
@@ -34,11 +46,21 @@ public class IniciativaPnl extends JPanel {
     private JTable tablaIniciativas;
     private DefaultTableModel modeloTabla;
     private int idIniciativaActual = 0;
-
+    
+    /**
+     * Constructor por defecto del panel. Arranca y ensambla todos los
+     * componentes gráficos, layouts y paletas cromáticas institucionales.
+     */
     public IniciativaPnl() {
         iniciarComponentes();
     }
-
+    
+    /**
+     * Construye, alinea y posiciona las regiones visuales de la interfaz.
+     * Divide la pantalla en una sección de formulario de controles (Región
+     * Oeste) empotrada en scrolls adaptativos y una sección de visualización
+     * tabular (Región Centro).
+     */
     private void iniciarComponentes() {
         setLayout(new BorderLayout(15, 15));
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -85,7 +107,6 @@ public class IniciativaPnl extends JPanel {
         gbc.gridy = f++;
         gblForm.add(cmbGestion, gbc);
 
-        // Fila dividida: Presupuesto y Meta
         JPanel pnlDividido = new JPanel(new GridLayout(1, 2, 10, 0));
         pnlDividido.setBackground(Color.WHITE);
         txtPresupuesto = new JTextField();
@@ -169,21 +190,42 @@ public class IniciativaPnl extends JPanel {
         tablaIniciativas.setRowHeight(25);
         add(new JScrollPane(tablaIniciativas), BorderLayout.CENTER);
     }
-
+    
+    /**
+     * Carga de forma limpia los registros del catálogo de sectores en el
+     * componente interactivo.
+     *
+     * @param lista Colección {@link List} que contiene las instancias del
+     * modelo {@link Sector}.
+     */
     public void cargarComboSectores(List<Sector> lista) {
         cmbSector.removeAllItems();
         for (Sector s : lista) {
             cmbSector.addItem(s);
         }
     }
-
+    
+    /**
+     * Carga de forma limpia los registros del catálogo de tareas en el
+     * componente interactivo.
+     *
+     * @param lista Colección {@link List} que contiene las instancias del
+     * modelo {@link Tarea}.
+     */
     public void cargarComboTareas(List<Tarea> lista) {
         cmbTarea.removeAllItems();
         for (Tarea t : lista) {
             cmbTarea.addItem(t);
         }
     }
-
+    
+    /**
+     * Vacía e inyecta un listado nuevo de planificaciones estructuradas dentro
+     * de la grilla tabular.
+     *
+     * @param lista Colección {@link List} conteniendo los objetos
+     * {@link Iniciativa} recuperados por el controlador.
+     */
     public void cargarDatosTabla(List<Iniciativa> lista) {
         modeloTabla.setRowCount(0);
         for (Iniciativa i : lista) {
@@ -198,7 +240,15 @@ public class IniciativaPnl extends JPanel {
             });
         }
     }
-
+    
+    /**
+     * Mapea, extrae y consolida los valores ingresados en el formulario en un
+     * objeto de negocio estructurado. Realiza conversiones explícitas de tipos
+     * primitivos y parsea fechas desde componentes utilitarios a SQL.
+     *
+     * @return Una instancia modelo de tipo {@link Iniciativa} lista para
+     * procesamiento o almacenamiento.
+     */
     public Iniciativa getIniciativaDelFormulario() {
         Iniciativa i = new Iniciativa();
         i.setIdIniciativa(idIniciativaActual);
@@ -211,9 +261,7 @@ public class IniciativaPnl extends JPanel {
         i.setIdGestion(((Gestion) cmbGestion.getSelectedItem()).getIdGestion());
         i.setEstado(cmbEstado.getSelectedItem().toString());
 
-        // --- CORRECCIÓN AQUÍ ---
         if (jdFechaEjecucion.getDate() != null) {
-            // Convertimos de java.util.Date a java.sql.Date
             long tiempoMilis = jdFechaEjecucion.getDate().getTime();
             i.setFechaEjecucion(new java.sql.Date(tiempoMilis));
         }
@@ -221,7 +269,13 @@ public class IniciativaPnl extends JPanel {
         return i;
     }
 
-
+    /**
+     * Inyecta los atributos de una iniciativa seleccionada de regreso a los
+     * controles del formulario físico. Gestiona la habilitación mutua de
+     * botones operacionales de actualización para evitar inserciones cruzadas.
+     *
+     * @param ini El objeto {@link Iniciativa} cuyos datos poblarán la UI.
+     */
     public void cargarIniciativaEnFormulario(Iniciativa ini) {
         this.idIniciativaActual = ini.getIdIniciativa();
         txtTitulo.setText(ini.getTitulo());
@@ -257,25 +311,40 @@ public class IniciativaPnl extends JPanel {
         btnEliminar.setEnabled(true);
     }
     
-public void cargarListaVoluntarios(List<modelo.Voluntario> lista) {
-        pnlVoluntarios.removeAll(); 
-        listaChecksVoluntarios.clear(); 
-        
+    /**
+     * Construye de manera dinámica la lista de selección con estructura
+     * CheckBox en el contenedor secundario. Vincula metadatos lógicos a los
+     * componentes interactivos mediante el uso de propiedades de cliente.
+     *
+     * @param lista Colección {@link List} que contiene el catálogo total de
+     * voluntarios vigentes.
+     */
+    public void cargarListaVoluntarios(List<modelo.Voluntario> lista) {
+        pnlVoluntarios.removeAll();
+        listaChecksVoluntarios.clear();
+
         for (modelo.Voluntario v : lista) {
-           
-            JCheckBox chk = new JCheckBox(v.toString()); 
+
+            JCheckBox chk = new JCheckBox(v.toString());
             chk.setBackground(Color.WHITE);
             chk.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            
+
             chk.putClientProperty("datosVoluntario", v);
-            
+
             listaChecksVoluntarios.add(chk);
             pnlVoluntarios.add(chk);
         }
         pnlVoluntarios.revalidate();
         pnlVoluntarios.repaint();
     }
-
+    
+    /**
+     * Intercepta la lista de CheckBoxes y extrae únicamente las instancias de
+     * los voluntarios marcados.
+     *
+     * @return Una colección {@link List} conteniendo los objetos
+     * {@link modelo.Voluntario} seleccionados por el usuario.
+     */
     public List<modelo.Voluntario> getVoluntariosSeleccionados() {
         List<modelo.Voluntario> seleccionados = new ArrayList<>();
         for (JCheckBox chk : listaChecksVoluntarios) {
@@ -286,7 +355,14 @@ public void cargarListaVoluntarios(List<modelo.Voluntario> lista) {
         }
         return seleccionados;
     }
-
+    
+    /**
+     * Sincroniza y activa visualmente los CheckBoxes correspondientes a una
+     * lista de IDs relacionales.
+     *
+     * @param ids Lista {@link List} de enteros representando los IDs de los
+     * voluntarios ya asignados previamente.
+     */
     public void seleccionarVoluntariosPorIds(List<Integer> ids) {
         for (JCheckBox chk : listaChecksVoluntarios) {
             chk.setSelected(false);
@@ -299,7 +375,11 @@ public void cargarListaVoluntarios(List<modelo.Voluntario> lista) {
         }
     }
 
-    
+    /**
+     * Restablece los campos de captura informativa y los CheckBoxes del panel a
+     * sus valores nulos de fábrica. Devuelve el estado de alternancia por
+     * defecto de los disparadores del módulo CRUD.
+     */
     public void limpiarFormulario() {
         idIniciativaActual = 0;
         txtTitulo.setText("");
@@ -317,6 +397,13 @@ public void cargarListaVoluntarios(List<modelo.Voluntario> lista) {
         btnGuardar.setEnabled(true);
     }
 
+    /**
+     * Carga los registros del catálogo institucional en el componente ComboBox
+     * de Gestión Ambiental.
+     *
+     * @param lista Colección {@link List} conteniendo instancias del modelo
+     * {@link modelo.Gestion}.
+     */
     public void cargarComboGestion(List<modelo.Gestion> lista) {
         cmbGestion.removeAllItems();
         for (modelo.Gestion g : lista) {
@@ -324,7 +411,10 @@ public void cargarListaVoluntarios(List<modelo.Voluntario> lista) {
         }
     }
 
-    // Getters para botones
+    /**
+     * Métodos GETTERS para eventos del controlador.
+     *  
+     */
     public JButton getBtnGuardar() {
         return btnGuardar;
     }
@@ -348,14 +438,22 @@ public void cargarListaVoluntarios(List<modelo.Voluntario> lista) {
     public JTable getTablaIniciativas() {
         return tablaIniciativas;
     }
-
+    
+    /**
+     * Método de abstracción gráfica interna para inyectar etiquetas
+     * estandarizadas en el GridBagLayout.
+     */
     private void agregarEtiqueta(JPanel p, GridBagConstraints g, String t, int r) {
         g.gridy = r;
         JLabel l = new JLabel(t);
         l.setFont(new Font("Segoe UI", Font.BOLD, 12));
         p.add(l, g);
     }
-
+    
+    /**
+     * Factoría de botones interna para mantener la consistencia del diseño de
+     * la interfaz de usuario.
+     */
     private JButton crearBoton(String t, Color c) {
         JButton b = new JButton(t);
         b.setBackground(c);
@@ -365,20 +463,21 @@ public void cargarListaVoluntarios(List<modelo.Voluntario> lista) {
         return b;
     }
     
-    private JButton crearBotonPDF(String t, Color c){
-        JButton b = new JButton(t);
-        b.setBackground(c);
-        b.setForeground(Color.WHITE);
-        b.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        b.setPreferredSize(new Dimension(10, 3));
-        return b;
-    }
-    
+    /**
+     * Muestra un cuadro modal de alerta informativa estándar al usuario.
+     *
+     * @param m Texto con la descripción del mensaje.
+     */
     public void mostrarMensaje(String m) {
         JOptionPane.showMessageDialog(this, m);
     }
-
+    
+    /**
+     * Muestra un cuadro modal crítico configurado con ícono de excepción de
+     * error.
+     *
+     * @param m Texto descriptivo de la falla interna encontrada.
+     */
     public void mostrarError(String m) {
         JOptionPane.showMessageDialog(this, m, "Error", JOptionPane.ERROR_MESSAGE);
     }

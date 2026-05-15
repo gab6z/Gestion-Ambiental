@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package controlador;
 
 import java.sql.SQLException;
@@ -12,9 +8,15 @@ import modelo.Voluntario;
 import vista.DashboardVoluntarioPnl;
 
 /**
+ * Controlador para el Dashboard del Voluntario en el sistema EcoVida. Se
+ * encarga de coordinar el flujo de datos entre el modelo de persistencia (DAO)
+ * y la interfaz gráfica que renderiza las tarjetas de iniciativas ambientales.
+ * * Interconecta la lógica de negocio con la vista según la arquitectura MVC.
  *
- * @author Usuario
+ * * @author Solis Caballero Geovanny Andrés
+ * @version 1.0
  */
+
 public class DashboardVoluntarioControlador {
     private DashboardVoluntarioPnl vista;
     private Voluntario voluntario;
@@ -25,16 +27,18 @@ public class DashboardVoluntarioControlador {
         this.voluntario = voluntario;
         cargarDatos();
     }
-
+    
+    /**
+     * Recupera la información de la base de datos y actualiza la interfaz
+     * gráfica. Consulta todas las iniciativas disponibles y contrasta cuáles
+     * pertenecen al voluntario logueado para enviarle la información
+     * consolidada al método de renderizado de la vista. * Muestra una alerta
+     * gráfica si ocurre un fallo en la capa de persistencia SQL.
+     */
     private void cargarDatos() {
         try {
-            // Obtenemos todas las iniciativas con el conteo de inscritos
             List<Iniciativa> todas = dao.listarTodas();
-            
-            // Obtenemos solo los IDs donde participa este voluntario
             List<Integer> misIds = dao.obtenerMisIniciativas(voluntario.getId_voluntario());
-            
-            // Enviamos todo a la vista para que dibuje las Cards
             vista.cargarCards(todas, misIds);
             
         } catch (SQLException e) {
