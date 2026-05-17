@@ -108,17 +108,14 @@ public class TareaControlador implements ActionListener, KeyListener {
         String herramientas = vista.txtHerramientas.getText().trim();
         String cupoStr = vista.txtCupo.getText().trim();
 
-        // Validación de campos obligatorios
         if (nombre.isEmpty() || herramientas.isEmpty() || cupoStr.isEmpty()) {
             return "ERROR_CAMPOS";
         }
+        
+        if (!nombre.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$") || !herramientas.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ, ]+$")) {
+            return "ERROR_FORMATO_TEXTO";
+        }
 
-// Se añadió la coma (,) a la validación de herramientas
-if (!nombre.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$") || !herramientas.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ, ]+$")) {
-    return "ERROR_FORMATO_TEXTO";
-}
-
-        // Validación de valores límite para el cupo
         try {
             int cupo = Integer.parseInt(cupoStr);
             if (cupo < 1 || cupo > 50) {
@@ -139,6 +136,7 @@ if (!nombre.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$") || !herramientas.mat
         }
     }
 
+
     /**
      * MÉTODO 2 PARA V&V: Determina si una tarea es apta para eliminación.
      * Evaluado mediante Análisis DU-Chain (Definición-Uso).
@@ -147,15 +145,15 @@ if (!nombre.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$") || !herramientas.mat
      * @return boolean true si se permite la eliminación, false de lo contrario.
      */
     public boolean validarEstadoEliminacion(int id, String estadoActual) {
-        boolean esEliminable = false; // Nodo 1: Definición (D)
+        boolean esEliminable = false; 
 
-        if (id > 0) { // Nodo 2: Uso (U)
-            if (!estadoActual.equals("En curso")) { // Nodo 3: Uso (U)
-                esEliminable = true; // Nodo 4: Definición (D)
+        if (id > 0) { 
+            if (!estadoActual.equals("En curso")) { 
+                esEliminable = true; 
             }
         }
 
-        return esEliminable; // Nodo 5: Uso (U)
+        return esEliminable; 
     }
     
     private void Filtro() {

@@ -226,7 +226,6 @@ public class FrmPrincipal extends JFrame {
         // pnlContenido.add(new MiPerfilPnl((Voluntario) usuarioLogeado), "PERFIL");
     }
 
-    // --- MÉTODOS AUXILIARES ---
     private JLabel crearEtiquetaCategoria(String texto) {
         JLabel lbl = new JLabel(texto);
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
