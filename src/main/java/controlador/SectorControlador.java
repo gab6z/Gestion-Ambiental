@@ -5,7 +5,7 @@
 package controlador;
 
 /**
- * Descripción: Controlador principal del módulo de Sectores.
+ * Controlador principal del módulo de Sectores.
  * Es el "director de orquesta" que escucha los eventos de la interfaz gráfica (Vista)
  * y delega las operaciones de guardado, eliminación y búsqueda a la capa de Servicio.
  * Además, gestiona la generación de reportes en PDF.
