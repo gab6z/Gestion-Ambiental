@@ -36,7 +36,6 @@ public class TareaControlador implements ActionListener, KeyListener {
         this.service = service;
         this.vista = vista;
 
-        // Registro de eventos de botones
         this.vista.btnGuardar.addActionListener(this);
         this.vista.btnActualizar.addActionListener(this);
         this.vista.btnEliminar.addActionListener(this);
@@ -44,11 +43,9 @@ public class TareaControlador implements ActionListener, KeyListener {
         this.vista.btnFiltrar.addActionListener(this);
         this.vista.btnExportarPDF.addActionListener(this);
         
-        // Registro de eventos de filtros y teclado
         this.vista.txtBuscar.addKeyListener(this);
         this.vista.cbxFiltroDificultad.addActionListener(this);
 
-        // Evento de selección en tabla
         this.vista.tablaTareas.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -98,7 +95,7 @@ public class TareaControlador implements ActionListener, KeyListener {
     }
 
     /**
-     * MÉTODO 1 PARA V&V: Procesa el guardado/actualización de tareas.
+     * Procesa el guardado/actualización de tareas.
      * Evaluado mediante Complejidad Ciclomática (Análisis Estático).
      * @return Código de estado String para validación en pruebas unitarias.
      * @throws Exception Si ocurre un error de conexión con la base de datos.
@@ -115,6 +112,7 @@ public class TareaControlador implements ActionListener, KeyListener {
         if (!nombre.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$") || !herramientas.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ, ]+$")) {
             return "ERROR_FORMATO_TEXTO";
         }
+
 
         try {
             int cupo = Integer.parseInt(cupoStr);
@@ -138,7 +136,7 @@ public class TareaControlador implements ActionListener, KeyListener {
 
 
     /**
-     * MÉTODO 2 PARA V&V: Determina si una tarea es apta para eliminación.
+     * Determina si una tarea es apta para eliminación.
      * Evaluado mediante Análisis DU-Chain (Definición-Uso).
      * @param id ID de la tarea a verificar.
      * @param estadoActual Estado actual de la tarea.

@@ -83,7 +83,7 @@ public class GestionAmbiental_panel extends JPanel {
         agregarCampoFormulario(formPanel, gbc, "Meta Anual Global:", fila++);
         JPanel panelMeta = new JPanel(new BorderLayout(5, 0));
         panelMeta.setBackground(Color.WHITE);
-        lblSimbolo = new JLabel("kg");
+        lblSimbolo = new JLabel("");
         lblSimbolo.setFont(new Font("Segoe UI", Font.BOLD, 14));
         txtMetaAnual = new JTextField();
         panelMeta.add(lblSimbolo, BorderLayout.WEST);

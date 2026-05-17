@@ -13,13 +13,11 @@
     </properties>
 
     <dependencies>
-        <!-- Driver de conexión para MySQL -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <version>8.3.0</version>
         </dependency>
-        <!-- Librería para generar PDFs  -->
         <dependency>
             <groupId>com.itextpdf</groupId>
             <artifactId>itextpdf</artifactId>

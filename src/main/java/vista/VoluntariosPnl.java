@@ -5,13 +5,20 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
- * @author EDUARDO
+ * Panel de interfaz gráfica para la gestión integral de voluntarios.
+ * Permite realizar operaciones CRUD (Crear, Leer, Actualizar, Eliminar),
+ * búsqueda filtrada y exportación de datos a PDF.
+ * * @author EDUARDO
+ * @version 1.0
+ * @since 2026-05-07
  */
 public class VoluntariosPnl extends JPanel {
     private String estadoActual = "Activo"; 
-    private JTextField txtCedula, txtNombres, txtCorreo, txtContrasena, txtTelefono, txtDisponibilidad; // Se agregó txtContrasena
+    private JTextField txtCedula, txtNombres, txtCorreo, txtContrasena, txtTelefono, txtDisponibilidad;
     private JComboBox<String> cbxGenero;
     private JTextArea txtHabilidades; 
     private JButton btnGuardar, btnActualizar, btnEliminar, btnLimpiar;
@@ -24,28 +31,34 @@ public class VoluntariosPnl extends JPanel {
 
     private int idVoluntarioActual = 0; 
 
+    /**
+     * Constructor de la clase. Inicializa los componentes visuales del panel.
+     */
     public VoluntariosPnl() {
         iniciarComponentes();
     }
 
+    /**
+     * Configura y organiza todos los componentes de la interfaz (Swing).
+     * Utiliza BorderLayout y GridBagLayout para la disposición de elementos.
+     */
     private void iniciarComponentes() {
         setLayout(new BorderLayout(15, 15));
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         setBackground(new Color(245, 247, 250));
 
+        // --- TITULO ---
         JLabel lblTitulo = new JLabel("Gestión de Voluntarios - EcoVida");
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblTitulo.setForeground(new Color(23, 93, 62));
         add(lblTitulo, BorderLayout.NORTH);
 
+        // --- PANEL IZQUIERDO (FORMULARIO) ---
         JPanel panelIzq = new JPanel(new BorderLayout());
         panelIzq.setBackground(Color.WHITE);
         panelIzq.setPreferredSize(new Dimension(350, 0));
-        panelIzq.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 220, 220)),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-
+        
+        // Panel para los campos
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBackground(Color.WHITE);
         GridBagConstraints gbc = new GridBagConstraints();
@@ -63,8 +76,7 @@ public class VoluntariosPnl extends JPanel {
         agregarEtiqueta(formPanel, gbc, "Correo:", fila++);
         txtCorreo = new JTextField(); gbc.gridy = fila++; formPanel.add(txtCorreo, gbc);
 
-        // --- NUEVO CAMPO DE CONTRASEÑA ---
-        agregarEtiqueta(formPanel, gbc, "Contraseña (Asignada por Admin):", fila++);
+        agregarEtiqueta(formPanel, gbc, "Contraseña:", fila++);
         txtContrasena = new JTextField(); gbc.gridy = fila++; formPanel.add(txtContrasena, gbc);
 
         agregarEtiqueta(formPanel, gbc, "Teléfono:", fila++);
@@ -82,21 +94,17 @@ public class VoluntariosPnl extends JPanel {
         txtHabilidades.setLineWrap(true);
         JScrollPane scrollHabil = new JScrollPane(txtHabilidades);
         gbc.gridy = fila++; formPanel.add(scrollHabil, gbc);
-
         panelIzq.add(formPanel, BorderLayout.NORTH);
 
-        // Botones
+        // --- INICIALIZACIÓN CRÍTICA DE BOTONES ---
+        // Aquí es donde se arregla tu error:
         JPanel panelBotones = new JPanel(new GridLayout(2, 2, 10, 10));
         panelBotones.setBackground(Color.WHITE);
-        panelBotones.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
 
         btnGuardar = crearBoton("Guardar", new Color(34, 166, 89));
         btnActualizar = crearBoton("Actualizar", new Color(0, 102, 204));
         btnEliminar = crearBoton("Dar de Baja", new Color(220, 53, 69));
         btnLimpiar = crearBoton("Limpiar", Color.GRAY);
-
-        btnActualizar.setEnabled(false);
-        btnEliminar.setEnabled(false);
 
         panelBotones.add(btnGuardar);
         panelBotones.add(btnActualizar);
@@ -106,38 +114,39 @@ public class VoluntariosPnl extends JPanel {
         panelIzq.add(panelBotones, BorderLayout.SOUTH);
         add(panelIzq, BorderLayout.WEST);
 
+        // --- PANEL DERECHO (TABLA Y BÚSQUEDA) ---
         JPanel panelDer = new JPanel(new BorderLayout(0, 10));
         panelDer.setBackground(Color.WHITE);
-        panelDer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JPanel pnlFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        // Filtros
+        JPanel pnlFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT));
         pnlFiltros.setBackground(Color.WHITE);
-        pnlFiltros.add(new JLabel("Buscar:"));
         txtBusqueda = new JTextField(12);
-        pnlFiltros.add(txtBusqueda);
         cmbFiltroBusqueda = new JComboBox<>(new String[]{"Cédula", "Nombre"});
-        pnlFiltros.add(cmbFiltroBusqueda);
-        
         btnBuscar = crearBoton("Filtrar", new Color(0, 102, 204));
         btnExportarPDF = crearBoton("PDF", new Color(220, 53, 69));
+        
+        pnlFiltros.add(new JLabel("Buscar:"));
+        pnlFiltros.add(txtBusqueda);
+        pnlFiltros.add(cmbFiltroBusqueda);
         pnlFiltros.add(btnBuscar);
         pnlFiltros.add(btnExportarPDF);
 
-        String[] columnas = {"ID", "Nombres", "Cédula", "Género", "Correo","Disponibilidad","Telefono", "Estado"};
-        modeloVoluntarios = new DefaultTableModel(columnas, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
-
+        // Tabla
+        String[] columnas = {"ID", "Nombres", "Cédula", "Género", "Correo", "Disponibilidad"};
+        modeloVoluntarios = new DefaultTableModel(columnas, 0);
         tablaVoluntarios = new JTable(modeloVoluntarios);
-        tablaVoluntarios.setRowHeight(25);
-        tablaVoluntarios.getColumnModel().getColumn(0).setMinWidth(0);
-        tablaVoluntarios.getColumnModel().getColumn(0).setMaxWidth(0);
 
         panelDer.add(pnlFiltros, BorderLayout.NORTH);
         panelDer.add(new JScrollPane(tablaVoluntarios), BorderLayout.CENTER);
         add(panelDer, BorderLayout.CENTER);
+    
     }
 
+    /**
+     * Actualiza la tabla de voluntarios con la lista proporcionada.
+     * * @param lista Lista de objetos {@link Voluntario} a mostrar en la tabla.
+     */
     public void cargarDatosTabla(List<Voluntario> lista) {
         modeloVoluntarios.setRowCount(0);
         for (Voluntario v : lista) {
@@ -154,13 +163,16 @@ public class VoluntariosPnl extends JPanel {
         }
     }
 
+    /**
+     * Limpia todos los campos del formulario y restablece el estado de los botones.
+     */
     public void limpiarFormulario() {
         idVoluntarioActual = 0;
         txtCedula.setText("");
         txtCedula.setEditable(true);
         txtNombres.setText("");
         txtCorreo.setText("");
-        txtContrasena.setText(""); // Limpiar contraseña
+        txtContrasena.setText(""); 
         txtTelefono.setText("");
         txtDisponibilidad.setText("");
         txtHabilidades.setText("");
@@ -172,13 +184,17 @@ public class VoluntariosPnl extends JPanel {
         tablaVoluntarios.clearSelection();
     }
 
+    /**
+     * Llena los campos del formulario con los datos de un voluntario específico.
+     * * @param v El objeto {@link Voluntario} cuyos datos se mostrarán.
+     */
     public void cargarVoluntarioEnFormulario(Voluntario v) {
         idVoluntarioActual = v.getId_voluntario();
         txtCedula.setText(v.getCedula());
         txtCedula.setEditable(false);
         txtNombres.setText(v.getNombres_completos());
         txtCorreo.setText(v.getCorreo());
-        txtContrasena.setText(""); // Ocultamos la contraseña al cargar por seguridad
+        txtContrasena.setText(""); 
         txtTelefono.setText(v.getTelefono());
         cbxGenero.setSelectedItem(v.getGenero());
         txtDisponibilidad.setText(v.getDisponibilidad_dias());
@@ -190,6 +206,10 @@ public class VoluntariosPnl extends JPanel {
         btnEliminar.setEnabled(true);
     }
 
+    /**
+     * Extrae la información ingresada en el formulario y la encapsula en un objeto.
+     * * @return Un objeto {@link Voluntario} con los datos actuales del formulario.
+     */
     public Voluntario getVoluntarioDelFormulario() {
         Voluntario v = new Voluntario();
         v.setId_voluntario(idVoluntarioActual);
@@ -197,7 +217,7 @@ public class VoluntariosPnl extends JPanel {
         v.setCedula(txtCedula.getText().trim());
         v.setNombres_completos(txtNombres.getText().trim());
         v.setCorreo(txtCorreo.getText().trim());
-        v.setContrasena(txtContrasena.getText().trim()); // Toma lo que el Admin escribió
+        v.setContrasena(txtContrasena.getText().trim());
         v.setTelefono(txtTelefono.getText().trim());
         v.setGenero(cbxGenero.getSelectedItem().toString());
         v.setDisponibilidad_dias(txtDisponibilidad.getText().trim());
@@ -205,7 +225,8 @@ public class VoluntariosPnl extends JPanel {
         return v;
     }
 
-    // GETTERS PARA LOS BOTONES...
+    // --- MÉTODOS DE ACCESO (GETTERS) ---
+
     public JButton getBtnGuardar() { return btnGuardar; }
     public JButton getBtnActualizar() { return btnActualizar; }
     public JButton getBtnEliminar() { return btnEliminar; }
@@ -216,9 +237,21 @@ public class VoluntariosPnl extends JPanel {
     public JTextField getTxtBusqueda() { return txtBusqueda; }
     public JComboBox<String> getCmbFiltroBusqueda() { return cmbFiltroBusqueda; }
 
+    /**
+     * Muestra un cuadro de diálogo informativo al usuario.
+     * @param m El mensaje informativo.
+     */
     public void mostrarMensaje(String m) { JOptionPane.showMessageDialog(this, m, "Sistema", 1); }
+    
+    /**
+     * Muestra un cuadro de diálogo de error al usuario.
+     * @param m El mensaje de error.
+     */
     public void mostrarError(String m) { JOptionPane.showMessageDialog(this, m, "Error", 0); }
 
+    /**
+     * Agrega de forma estandarizada una etiqueta al panel de formulario.
+     */
     private void agregarEtiqueta(JPanel p, GridBagConstraints g, String t, int f) {
         g.gridy = f;
         JLabel l = new JLabel(t);
@@ -226,6 +259,12 @@ public class VoluntariosPnl extends JPanel {
         p.add(l, g);
     }
 
+    /**
+     * Crea y estiliza un botón con parámetros específicos de color.
+     * @param t Texto del botón.
+     * @param bg Color de fondo.
+     * @return El objeto JButton configurado.
+     */
     private JButton crearBoton(String t, Color bg) {
         JButton b = new JButton(t);
         b.setBackground(bg);

@@ -29,9 +29,9 @@ public class FrmPrincipal extends JFrame {
 
     private JPanel pnlContenido;
     private CardLayout cardLayout;
-    private Persona usuarioLogeado; // Guardamos al usuario que entró
+    private Persona usuarioLogeado;
+    private FrmPerfilVoluntario pnlPerfil;
 
-    // Constructor actualizado para recibir al usuario
     public FrmPrincipal(Persona usuario) {
         this.usuarioLogeado = usuario;
         configurarVentana();
@@ -47,13 +47,11 @@ public class FrmPrincipal extends JFrame {
     }
 
     private void inicializarComponentes() {
-        // 1. Configuración del menú lateral (Igual que el tuyo)
         JPanel pnlMenuLateral = new JPanel();
         pnlMenuLateral.setBackground(COLOR_LATERAL);
         pnlMenuLateral.setPreferredSize(new Dimension(260, 0));
         pnlMenuLateral.setLayout(new BorderLayout());
 
-        // --- LOGO ---
         JPanel pnlLogo = new JPanel();
         pnlLogo.setLayout(new BoxLayout(pnlLogo, BoxLayout.Y_AXIS));
         pnlLogo.setBackground(COLOR_LATERAL);
@@ -71,17 +69,19 @@ public class FrmPrincipal extends JFrame {
         pnlLogo.add(lblLogoSubtitulo);
         pnlMenuLateral.add(pnlLogo, BorderLayout.NORTH);
 
-        // --- BOTONES DINÁMICOS POR ROL ---
         JPanel pnlBotones = new JPanel();
         pnlBotones.setLayout(new BoxLayout(pnlBotones, BoxLayout.Y_AXIS));
         pnlBotones.setBackground(COLOR_LATERAL);
         pnlBotones.setBorder(new EmptyBorder(0, 10, 0, 10));
 
         pnlBotones.add(crearEtiquetaCategoria("PRINCIPAL"));
-        pnlBotones.add(crearBotonMenu("Dashboard", "DASHBOARD"));
 
         if (usuarioLogeado instanceof Voluntario) {
+            pnlBotones.add(crearBotonMenu("Dashboard", "DASHBOARD"));
             pnlBotones.add(crearBotonMenu("Mi Perfil", "PERFIL"));
+            pnlBotones.add(crearBotonMenu("Ser voluntario","INSCRIBIRSE"));
+            
+
         }
 
         pnlBotones.add(Box.createVerticalStrut(15));
@@ -101,7 +101,6 @@ public class FrmPrincipal extends JFrame {
 
         pnlMenuLateral.add(pnlBotones, BorderLayout.CENTER);
 
-        // --- BOTÓN DE CERRAR SESIÓN ---
         JPanel pnlFooter = new JPanel(new BorderLayout());
         pnlFooter.setBackground(COLOR_LATERAL);
         pnlFooter.setBorder(new EmptyBorder(10, 10, 20, 10));
@@ -144,22 +143,22 @@ public class FrmPrincipal extends JFrame {
         pnlMenuLateral.add(pnlFooter, BorderLayout.SOUTH);
         add(pnlMenuLateral, BorderLayout.WEST);
 
-        // --- CONTENIDO ---
         cardLayout = new CardLayout();
         pnlContenido = new JPanel(cardLayout);
         pnlContenido.setBackground(COLOR_FONDO);
 
-        // 1. Panel inicial
         pnlContenido.add(crearPanelBienvenida(), "BIENVENIDA");
 
-        // 2. CORRECCIÓN: Instanciar según el rol
         if (usuarioLogeado instanceof Administrador) {
             instanciarModulosAdmin();
-            // Registramos el Dashboard para el Admin (puede ser el mismo de bienvenida por ahora)
-            pnlContenido.add(crearPanelBienvenida(), "DASHBOARD");
-        } else if (usuarioLogeado instanceof Voluntario) {
-            // LLAMADA CRÍTICA: Aquí es donde se crean las Cards
-            instanciarModulosVoluntario();
+        }else if (usuarioLogeado instanceof Voluntario) {
+            instanciarModulosVoluntario(); 
+            
+            this.pnlPerfil = new FrmPerfilVoluntario((Voluntario) usuarioLogeado);
+            pnlContenido.add(pnlPerfil, "PERFIL");
+            
+            FrmExplorarIniciativas pnlExplorar = new FrmExplorarIniciativas((Voluntario) usuarioLogeado);
+            pnlContenido.add(pnlExplorar, "INSCRIBIRSE");
         }
 
         add(pnlContenido, BorderLayout.CENTER);
@@ -167,27 +166,22 @@ public class FrmPrincipal extends JFrame {
     }
 
     private void instanciarModulosAdmin() {
-        // Sectores
         SectoresPnl pnlSectores = new SectoresPnl();
         new controlador.SectorControlador(pnlSectores);
         pnlContenido.add(pnlSectores, "SECTORES");
 
-        // Tareas
         TareasPnl pnlTareas = new TareasPnl();
         new controlador.TareaControlador(new modelo.Tarea(), new service.TareaService(), pnlTareas).iniciar();
         pnlContenido.add(pnlTareas, "TAREAS");
 
-        // Voluntarios
         vista.VoluntariosPnl pnlVoluntarios = new vista.VoluntariosPnl();
         new controlador.VoluntarioControlador(pnlVoluntarios);
         pnlContenido.add(pnlVoluntarios, "VOLUNTARIOS");
 
-        // Gestión
         vista.GestionAmbiental_panel pnlGestion = new vista.GestionAmbiental_panel();
         new controlador.GestionControlador(pnlGestion);
         pnlContenido.add(pnlGestion, "GESTION");
 
-        // Iniciativas
         IniciativaPnl pnlIniciativas = new IniciativaPnl();
         new controlador.IniciativaControlador(pnlIniciativas);
         pnlContenido.add(pnlIniciativas, "INICIATIVAS");
@@ -197,7 +191,6 @@ public class FrmPrincipal extends JFrame {
         JPanel pnl = new JPanel(new GridBagLayout());
         pnl.setBackground(COLOR_FONDO);
         
-        // Construimos el mensaje dinámico
         String mensaje = "Bienvenida, " + usuarioLogeado.getNombres_completos();
         if (usuarioLogeado instanceof Administrador) {
             mensaje = "Bienvenido Administrador, " + usuarioLogeado.getNombres_completos();
@@ -212,14 +205,12 @@ public class FrmPrincipal extends JFrame {
     }
     
     private void instanciarModulosVoluntario() {
-        // 1. Instanciar el panel de las tarjetas
+       
         DashboardVoluntarioPnl pnlDashVol = new DashboardVoluntarioPnl();
 
-        // 2. Conectar con su controlador (Necesitarás crear esta clase)
-        // Le pasamos el panel y el usuario actual para saber qué resaltar
+        
         new controlador.DashboardVoluntarioControlador(pnlDashVol, (Voluntario) usuarioLogeado);
 
-        // 3. Agregarlo al pnlContenido con el nombre que usa el botón de Dashboard
         pnlContenido.add(pnlDashVol, "DASHBOARD");
 
         // También puedes instanciar aquí el panel de "Mi Perfil"
@@ -257,6 +248,9 @@ public class FrmPrincipal extends JFrame {
 
         btn.addActionListener(e -> {
             try {
+                if ("PERFIL".equals(nombreCarta) && pnlPerfil != null) {
+                    pnlPerfil.cargarIniciativas();
+                }
                 cardLayout.show(pnlContenido, nombreCarta);
             } catch (Exception ex) {
                 System.out.println("Pantalla no programada aún: " + nombreCarta);
