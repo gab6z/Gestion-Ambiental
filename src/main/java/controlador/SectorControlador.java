@@ -104,23 +104,29 @@ public class SectorControlador {
  * @return una cadena con los mensajes de error encontrados, si no existen errores retorna una cadena vacía.
  */
     public String validarDatosSector(String nombre, String provincia, String riesgo, String estado) {
-        String mensajeError = ""; // ¡Perfecta para el análisis DU-Cadena!
+        String mensajeError = ""; 
 
         if (nombre == null || nombre.trim().isEmpty()) {
+            
             mensajeError += "- El nombre de la zona es obligatorio.\n";
+            
         } else if (nombre.length() > 150) {
+            
             mensajeError += "- El nombre excede los 150 caracteres permitidos.\n";
         }
 
         if (provincia == null || provincia.trim().isEmpty()) {
+            
             mensajeError += "- La provincia/ciudad es obligatoria.\n";
         }
 
         if (riesgo == null || riesgo.equals("Seleccionar...")) {
+            
             mensajeError += "- Debe seleccionar un nivel de riesgo.\n";
         }
 
         if (estado == null || estado.equals("Seleccionar...")) {
+            
             mensajeError += "- Debe seleccionar el estado de la zona.\n";
         }
 
@@ -136,19 +142,26 @@ public class SectorControlador {
  * @return {@code true} si los filtros son válidos;
  *         {@code false} si no se ingresó ningún criterio válido.
  */
-    public boolean validarFiltrosBusqueda(String textoBusqueda, String riesgo, String estado) {
-        if ((textoBusqueda == null || textoBusqueda.trim().isEmpty()) && 
-            (riesgo == null || riesgo.equals("Seleccionar...")) && 
-            (estado == null || estado.equals("Seleccionar..."))) {
-            return false; 
-        }
+public boolean validarFiltrosBusqueda(String textoBusqueda, String riesgo, String estado) {
         
-        if (textoBusqueda != null && !textoBusqueda.trim().isEmpty()) {
+        if (textoBusqueda != null) {
             if (textoBusqueda.length() > 50) {
-                return false;
+                return false; 
+            }
+            if (!textoBusqueda.isBlank()) {
+                return true; 
             }
         }
-        return true; 
+
+        if (!"Seleccionar...".equals(riesgo)) {
+            return true;
+        }
+
+        if (!"Seleccionar...".equals(estado)) {
+            return true;
+        }
+
+        return false;
     }
 
     

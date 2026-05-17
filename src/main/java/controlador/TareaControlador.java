@@ -20,6 +20,7 @@ import vista.TareasPnl;
  * @version 1.0
  * @since 2026-05-06
  */
+
 public class TareaControlador implements ActionListener, KeyListener {
     private Tarea modelo;
     private TareaService service;
@@ -95,8 +96,8 @@ public class TareaControlador implements ActionListener, KeyListener {
     }
 
     /**
-    * PARA V y V: Procesa el guardado/actualización de tareas.
-    * Evaluado mediante Complejidad Ciclomática (Análisis Estático).
+     * Procesa el guardado/actualización de tareas.
+     * Evaluado mediante Complejidad Ciclomática (Análisis Estático).
      * @return Código de estado String para validación en pruebas unitarias.
      * @throws Exception Si ocurre un error de conexión con la base de datos.
      */
@@ -108,10 +109,11 @@ public class TareaControlador implements ActionListener, KeyListener {
         if (nombre.isEmpty() || herramientas.isEmpty() || cupoStr.isEmpty()) {
             return "ERROR_CAMPOS";
         }
+        
+        if (!nombre.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$") || !herramientas.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ, ]+$")) {
+            return "ERROR_FORMATO_TEXTO";
+        }
 
-    if (!nombre.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$") || !herramientas.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ, ]+$")) {
-        return "ERROR_FORMATO_TEXTO";
-    }
 
         try {
             int cupo = Integer.parseInt(cupoStr);
@@ -133,8 +135,10 @@ public class TareaControlador implements ActionListener, KeyListener {
         }
     }
 
+
     /**
      * PARA V y V: Determina si una tarea es apta para eliminación.
+     * Determina si una tarea es apta para eliminación.
      * Evaluado mediante Análisis DU-Chain (Definición-Uso).
      * @param id ID de la tarea a verificar.
      * @param estadoActual Estado actual de la tarea.
