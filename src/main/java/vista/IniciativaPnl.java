@@ -4,9 +4,11 @@ import modelo.Iniciativa;
 import modelo.Sector;
 import modelo.Tarea;
 import java.awt.*;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import modelo.Gestion;
 
@@ -46,6 +48,13 @@ public class IniciativaPnl extends JPanel {
     private JTable tablaIniciativas;
     private DefaultTableModel modeloTabla;
     private int idIniciativaActual = 0;
+    private com.toedter.calendar.JDateChooser jdFiltroDesde;
+    private com.toedter.calendar.JDateChooser jdFiltroHasta;
+    private JList<Sector> listFiltroSectores;
+    private DefaultListModel<Sector> modeloListaSectores;
+    private JComboBox<String> cmbFiltroEstado;
+    private JButton btnFiltrar;
+    private JButton btnLimpiarFiltro;
     
     /**
      * Constructor por defecto del panel. Arranca y ensambla todos los
@@ -65,7 +74,7 @@ public class IniciativaPnl extends JPanel {
         setLayout(new BorderLayout(15, 15));
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         setBackground(new Color(245, 247, 250));
-        
+        construirPanelFiltros();    
 
         JLabel lblTituloPnl = new JLabel("Planificación de Iniciativas (EcoVida)");
         lblTituloPnl.setFont(new Font("Segoe UI", Font.BOLD, 22));
@@ -188,7 +197,105 @@ public class IniciativaPnl extends JPanel {
         tablaIniciativas.getColumnModel().getColumn(0).setMaxWidth(0);
         tablaIniciativas.getColumnModel().getColumn(0).setPreferredWidth(0);
         tablaIniciativas.setRowHeight(25);
-        add(new JScrollPane(tablaIniciativas), BorderLayout.CENTER);
+        
+        JPanel pnlDerecho = new JPanel(new BorderLayout(0, 8));
+        pnlDerecho.setBackground(new Color(245, 247, 250));
+        pnlDerecho.add(construirPanelFiltros(), BorderLayout.NORTH);
+        pnlDerecho.add(new JScrollPane(tablaIniciativas), BorderLayout.CENTER);
+        add(pnlDerecho, BorderLayout.CENTER);
+    }
+    
+    /**
+     * Construye el panel superior de filtros con rango de fechas,
+     * multiselección de sectores y estado de iniciativa.
+     *
+     * @return JPanel configurado con todos los controles de filtrado.
+     */
+    private JPanel construirPanelFiltros() {
+        JPanel pnlFiltros = new JPanel(new GridBagLayout());
+        pnlFiltros.setBackground(new Color(235, 240, 235));
+        pnlFiltros.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(new Color(34, 115, 78)),
+                "Filtros de Búsqueda",
+                TitledBorder.LEFT, TitledBorder.TOP,
+                new Font("Segoe UI", Font.BOLD, 11),
+                new Color(23, 93, 62)));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(4, 6, 4, 6);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridy = 0;
+        gbc.weightx = 0;
+
+        gbc.gridx = 0;
+        pnlFiltros.add(new JLabel("Desde:"), gbc);
+
+        gbc.gridx = 1;
+        pnlFiltros.add(new JLabel("Hasta:"), gbc);
+
+        gbc.gridx = 2;
+        pnlFiltros.add(new JLabel("Sectores:"), gbc);
+
+        gbc.gridx = 3;
+        pnlFiltros.add(new JLabel("Estado:"), gbc);
+
+        gbc.gridy = 1;
+
+        gbc.gridx = 0;
+        gbc.weightx = 0;
+        jdFiltroDesde = new com.toedter.calendar.JDateChooser();
+        jdFiltroDesde.setDateFormatString("yyyy-MM-dd");
+        jdFiltroDesde.setPreferredSize(new Dimension(120, 26));
+        pnlFiltros.add(jdFiltroDesde, gbc);
+
+        gbc.gridx = 1;
+        jdFiltroHasta = new com.toedter.calendar.JDateChooser();
+        jdFiltroHasta.setDateFormatString("yyyy-MM-dd");
+        jdFiltroHasta.setPreferredSize(new Dimension(120, 26));
+        pnlFiltros.add(jdFiltroHasta, gbc);
+
+        gbc.gridx = 2;
+        gbc.gridheight = 1;
+        modeloListaSectores = new DefaultListModel<>();
+        listFiltroSectores = new JList<>(modeloListaSectores);
+        listFiltroSectores.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        listFiltroSectores.setVisibleRowCount(3);
+        JScrollPane scrollSectores = new JScrollPane(listFiltroSectores);
+        scrollSectores.setPreferredSize(new Dimension(150, 60)); // fijo siempre
+        pnlFiltros.add(scrollSectores, gbc);
+
+        gbc.gridx = 3;
+        gbc.weightx = 0;
+        cmbFiltroEstado = new JComboBox<>(new String[]{
+            "Todos", "Planificada", "En ejecución", "Finalizada", "Cancelada"
+        });
+        cmbFiltroEstado.setPreferredSize(new Dimension(130, 26));
+        pnlFiltros.add(cmbFiltroEstado, gbc);
+
+        gbc.gridx = 4;
+        gbc.weightx = 0;
+
+        gbc.gridy = 0;
+        btnFiltrar = new JButton("Filtrar");
+        btnFiltrar.setBackground(new Color(34, 115, 78));
+        btnFiltrar.setForeground(Color.WHITE);
+        btnFiltrar.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnFiltrar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnFiltrar.setPreferredSize(new Dimension(110, 26));
+        pnlFiltros.add(btnFiltrar, gbc);
+
+        gbc.gridy = 1;
+        btnLimpiarFiltro = new JButton("Limpiar Filtros");
+        btnLimpiarFiltro.setBackground(Color.GRAY);
+        btnLimpiarFiltro.setForeground(Color.WHITE);
+        btnLimpiarFiltro.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnLimpiarFiltro.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnLimpiarFiltro.setPreferredSize(new Dimension(110, 26));
+        pnlFiltros.add(btnLimpiarFiltro, gbc);
+
+        return pnlFiltros;
     }
     
     /**
@@ -254,16 +361,37 @@ public class IniciativaPnl extends JPanel {
         i.setIdIniciativa(idIniciativaActual);
         i.setTitulo(txtTitulo.getText());
         i.setDescripcion(txtLogistica.getText());
-        i.setPresupuesto(Double.parseDouble(txtPresupuesto.getText()));
-        i.setMeta(Integer.parseInt(txtMeta.getText()));
-        i.setIdSector(((Sector) cmbSector.getSelectedItem()).getIdSector());
-        i.setIdTarea(((Tarea) cmbTarea.getSelectedItem()).getIdTarea());
-        i.setIdGestion(((Gestion) cmbGestion.getSelectedItem()).getIdGestion());
+        
+        try {
+            i.setPresupuesto(Double.parseDouble(txtPresupuesto.getText().trim()));
+        } catch (NumberFormatException e) {
+            i.setPresupuesto(0);
+        }
+
+        try {
+            i.setMeta(Integer.parseInt(txtMeta.getText().trim()));
+        } catch (NumberFormatException e) {
+            i.setMeta(0);
+        }
+
+        // Combos seguros
+        if (cmbSector.getSelectedItem() != null) {
+            i.setIdSector(((Sector) cmbSector.getSelectedItem()).getIdSector());
+        }
+
+        if (cmbTarea.getSelectedItem() != null) {
+            i.setIdTarea(((Tarea) cmbTarea.getSelectedItem()).getIdTarea());
+        }
+
+        if (cmbGestion.getSelectedItem() != null) {
+            i.setIdGestion(((Gestion) cmbGestion.getSelectedItem()).getIdGestion());
+        }
+
         i.setEstado(cmbEstado.getSelectedItem().toString());
 
         if (jdFechaEjecucion.getDate() != null) {
-            long tiempoMilis = jdFechaEjecucion.getDate().getTime();
-            i.setFechaEjecucion(new java.sql.Date(tiempoMilis));
+            i.setFechaEjecucion(new java.sql.Date(
+                    jdFechaEjecucion.getDate().getTime()));
         }
 
         return i;
@@ -482,4 +610,71 @@ public class IniciativaPnl extends JPanel {
         JOptionPane.showMessageDialog(this, m, "Error", JOptionPane.ERROR_MESSAGE);
     }
     
+    /**
+     * Carga los sectores disponibles en la lista multiselect de filtros.
+     * Reutiliza el mismo catálogo ya cargado en el combo del formulario.
+     *
+     * @param lista Lista de sectores a mostrar.
+     */
+    public void cargarListaFiltroSectores(List<Sector> lista) {
+        modeloListaSectores.clear();
+        for (Sector s : lista) {
+            modeloListaSectores.addElement(s);
+        }
+    }
+
+    /**
+     * @return Sectores seleccionados en el filtro multiselect.
+     */
+    public List<Sector> getSectoresFiltroSeleccionados() {
+        return listFiltroSectores.getSelectedValuesList();
+    }
+
+    /**
+     * @return Fecha de inicio del rango de filtro, o null si no se seleccionó.
+     */
+    public Date getFiltroDesde() {
+        return jdFiltroDesde.getDate() != null
+                ? new java.sql.Date(jdFiltroDesde.getDate().getTime()) : null;
+    }
+
+    /**
+     * @return Fecha fin del rango de filtro, o null si no se seleccionó.
+     */
+    public Date getFiltroHasta() {
+        return jdFiltroHasta.getDate() != null
+                ? new java.sql.Date(jdFiltroHasta.getDate().getTime()) : null;
+    }
+
+    /**
+     * @return Estado seleccionado en el filtro, o "Todos" si no se filtró.
+     */
+    public String getFiltroEstado() {
+        return cmbFiltroEstado.getSelectedItem().toString();
+    }
+
+    /**
+     * Resetea todos los controles del panel de filtros a su estado inicial.
+     */
+    public void limpiarFiltros() {
+        jdFiltroDesde.setDate(null);
+        jdFiltroHasta.setDate(null);
+        listFiltroSectores.clearSelection();
+        cmbFiltroEstado.setSelectedIndex(0);
+    }
+
+    /**
+     * @return Botón Filtrar para enlazar en el controlador.
+     */
+    public JButton getBtnFiltrar() {
+        return btnFiltrar;
+    }
+
+    /**
+     * @return Botón Limpiar Filtros para enlazar en el controlador.
+     */
+    public JButton getBtnLimpiarFiltro() {
+        return btnLimpiarFiltro;
+    }
+
 }
