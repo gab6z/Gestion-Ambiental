@@ -133,37 +133,29 @@ public class SectorControlador {
         return mensajeError;
     }
 
-/**
- * Valida los filtros ingresados para realizar la búsqueda de sectores.
- *
- * @param textoBusqueda texto de búsqueda ingresado por el usuario.
- * @param riesgo filtro de nivel de riesgo seleccionado.
- * @param estado filtro de estado seleccionado.
- * @return {@code true} si los filtros son válidos;
- *         {@code false} si no se ingresó ningún criterio válido.
- */
-public boolean validarFiltrosBusqueda(String textoBusqueda, String riesgo, String estado) {
+    /**
+     * Valida los filtros ingresados para realizar la búsqueda de sectores.
+     *
+     * @param textoBusqueda texto de búsqueda ingresado por el usuario.
+     * @param riesgo filtro de nivel de riesgo seleccionado.
+     * @param estado filtro de estado seleccionado.
+     * @return {@code true} si los filtros son válidos;
+     *         {@code false} si no se ingresó ningún criterio válido.
+     */
+    public boolean validarFiltrosBusqueda(String textoBusqueda, String riesgo, String estado) {
         
-        if (textoBusqueda != null) {
-            if (textoBusqueda.length() > 50) {
+        if (textoBusqueda != null) {        
+            if (textoBusqueda.length() > 50) {               
                 return false; 
             }
-            if (!textoBusqueda.isBlank()) {
+            if (!textoBusqueda.isBlank()) {            
                 return true; 
             }
-        }
-
-        if (!"Seleccionar...".equals(riesgo)) {
+        } if (!"Seleccionar...".equals(riesgo) || !"Seleccionar...".equals(estado) ) {
             return true;
         }
-
-        if (!"Seleccionar...".equals(estado)) {
-            return true;
-        }
-
         return false;
     }
-
     
 /**
  * Guarda un sector en la base de datos.
