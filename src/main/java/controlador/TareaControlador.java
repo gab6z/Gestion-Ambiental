@@ -20,6 +20,7 @@ import vista.TareasPnl;
  * @version 1.0
  * @since 2026-05-06
  */
+
 public class TareaControlador implements ActionListener, KeyListener {
     private Tarea modelo;
     private TareaService service;
@@ -36,7 +37,6 @@ public class TareaControlador implements ActionListener, KeyListener {
         this.service = service;
         this.vista = vista;
 
-        // Registro de eventos de botones
         this.vista.btnGuardar.addActionListener(this);
         this.vista.btnActualizar.addActionListener(this);
         this.vista.btnEliminar.addActionListener(this);
@@ -44,11 +44,9 @@ public class TareaControlador implements ActionListener, KeyListener {
         this.vista.btnFiltrar.addActionListener(this);
         this.vista.btnExportarPDF.addActionListener(this);
         
-        // Registro de eventos de filtros y teclado
         this.vista.txtBuscar.addKeyListener(this);
         this.vista.cbxFiltroDificultad.addActionListener(this);
 
-        // Evento de selección en tabla
         this.vista.tablaTareas.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -98,7 +96,7 @@ public class TareaControlador implements ActionListener, KeyListener {
     }
 
     /**
-     * MÉTODO 1 PARA V&V: Procesa el guardado/actualización de tareas.
+     * Procesa el guardado/actualización de tareas.
      * Evaluado mediante Complejidad Ciclomática (Análisis Estático).
      * @return Código de estado String para validación en pruebas unitarias.
      * @throws Exception Si ocurre un error de conexión con la base de datos.
@@ -108,17 +106,15 @@ public class TareaControlador implements ActionListener, KeyListener {
         String herramientas = vista.txtHerramientas.getText().trim();
         String cupoStr = vista.txtCupo.getText().trim();
 
-        // Validación de campos obligatorios
         if (nombre.isEmpty() || herramientas.isEmpty() || cupoStr.isEmpty()) {
             return "ERROR_CAMPOS";
         }
+        
+        if (!nombre.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$") || !herramientas.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ, ]+$")) {
+            return "ERROR_FORMATO_TEXTO";
+        }
 
-// Se añadió la coma (,) a la validación de herramientas
-if (!nombre.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$") || !herramientas.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ, ]+$")) {
-    return "ERROR_FORMATO_TEXTO";
-}
 
-        // Validación de valores límite para el cupo
         try {
             int cupo = Integer.parseInt(cupoStr);
             if (cupo < 1 || cupo > 50) {
@@ -139,23 +135,25 @@ if (!nombre.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$") || !herramientas.mat
         }
     }
 
+
     /**
-     * MÉTODO 2 PARA V&V: Determina si una tarea es apta para eliminación.
+     * PARA V y V: Determina si una tarea es apta para eliminación.
+     * Determina si una tarea es apta para eliminación.
      * Evaluado mediante Análisis DU-Chain (Definición-Uso).
      * @param id ID de la tarea a verificar.
      * @param estadoActual Estado actual de la tarea.
      * @return boolean true si se permite la eliminación, false de lo contrario.
      */
     public boolean validarEstadoEliminacion(int id, String estadoActual) {
-        boolean esEliminable = false; // Nodo 1: Definición (D)
+        boolean esEliminable = false; 
 
-        if (id > 0) { // Nodo 2: Uso (U)
-            if (!estadoActual.equals("En curso")) { // Nodo 3: Uso (U)
-                esEliminable = true; // Nodo 4: Definición (D)
+        if (id > 0) { 
+            if (!estadoActual.equals("En curso")) { 
+                esEliminable = true; 
             }
         }
 
-        return esEliminable; // Nodo 5: Uso (U)
+        return esEliminable; 
     }
     
     private void Filtro() {

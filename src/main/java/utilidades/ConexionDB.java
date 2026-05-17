@@ -18,7 +18,7 @@ public class ConexionDB {
     private static final String DRIVER = "com.mysql.cj.jdbc.Driver";
     private static final String URL = "jdbc:mysql://localhost:3306/ecovida?useSSL=false&serverTimezone=UTC";
     private static final String USUARIO = "root"; 
-    private static final String PASSWORD = "YSYA2023_Heridas*";
+    private static final String PASSWORD = "";
  
     
 /**

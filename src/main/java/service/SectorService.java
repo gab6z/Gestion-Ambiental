@@ -1,5 +1,10 @@
 package service;
 
+import dao.SectorDAO;
+import modelo.Sector;
+import java.sql.SQLException;
+import java.util.List;
+
 /**
  * Descripción: Clase de servicio que implementa la lógica de negocio para los sectores.
  * Actúa como intermediario entre el Controlador y el DAO, tomando decisiones
@@ -9,11 +14,6 @@ package service;
  * @version 1.0
  * @since 2026-05-05
  */
-
-import dao.SectorDAO;
-import modelo.Sector;
-import java.sql.SQLException;
-import java.util.List;
 
 public class SectorService {
 

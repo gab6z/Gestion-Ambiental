@@ -14,11 +14,9 @@ import modelo.Iniciativa;
 public class IniciativaCard extends JPanel {
 
     public IniciativaCard(Iniciativa ini, boolean asignado) {
-        // Layout principal de la tarjeta
         setLayout(new BorderLayout(10, 10));
         setPreferredSize(new Dimension(300, 200));
 
-        // Colores basados en la asignación
         Color colorFondo = asignado ? new Color(232, 245, 233) : Color.WHITE;
         Color colorBorde = asignado ? new Color(76, 175, 80) : new Color(200, 200, 200);
 
@@ -38,7 +36,7 @@ public class IniciativaCard extends JPanel {
         txtTitulo.setOpaque(false);
         add(txtTitulo, BorderLayout.NORTH);
 
-        // --- DETALLES (Panel Central) ---
+        
         JPanel pnlDetalles = new JPanel();
         pnlDetalles.setLayout(new BoxLayout(pnlDetalles, BoxLayout.Y_AXIS));
         pnlDetalles.setOpaque(false);
@@ -47,7 +45,6 @@ public class IniciativaCard extends JPanel {
         pnlDetalles.add(crearDatoLabel("Tarea: ", ini.getNombreTarea()));
         pnlDetalles.add(Box.createVerticalStrut(5));
 
-        // Información de cupos
         String cupos = "Participantes: " + ini.getTotalParticipantes() + " / " + ini.getMeta();
         JLabel lblCupos = new JLabel(cupos);
         lblCupos.setFont(new Font("Segoe UI", Font.ITALIC, 12));
@@ -55,7 +52,6 @@ public class IniciativaCard extends JPanel {
 
         add(pnlDetalles, BorderLayout.CENTER);
 
-        // --- INDICADOR DE ASIGNACIÓN ---
         if (asignado) {
             JLabel lblAsignado = new JLabel("Has sido ASIGNADO a este proyecto.");
             lblAsignado.setForeground(new Color(46, 125, 50));

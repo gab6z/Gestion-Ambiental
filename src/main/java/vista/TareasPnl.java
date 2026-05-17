@@ -44,7 +44,6 @@ public class TareasPnl extends JPanel {
         JPanel panelCentral = new JPanel(new GridLayout(1, 2, 20, 0));
         panelCentral.setOpaque(false);
 
-        // ================= PANEL IZQUIERDO (FORMULARIO) =================
         JPanel panelIzq = new JPanel(new GridBagLayout());
         panelIzq.setBackground(Color.WHITE);
         panelIzq.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
@@ -53,7 +52,6 @@ public class TareasPnl extends JPanel {
         gbc.insets = new Insets(5, 15, 5, 15);
         gbc.weightx = 1.0;
 
-        // El txtId se inicializa pero NO se agrega al panelIzq
         txtId = new JTextField(); 
 
         txtNombre = new JTextField();
@@ -91,7 +89,6 @@ public class TareasPnl extends JPanel {
         panelIzq.add(pnlBotones, gbc);
         panelCentral.add(panelIzq);
 
-        // ================= PANEL DERECHO (TABLA Y FILTROS) =================
         JPanel panelDer = new JPanel(new BorderLayout(5, 5));
         panelDer.setOpaque(false);
 
@@ -144,7 +141,7 @@ public class TareasPnl extends JPanel {
     }
 
     /**
-     * Helper para la creación de botones personalizados.
+     * Helper para la creación de botones personalizados
      */
     private JButton crearBoton(String texto, Color color) {
         JButton btn = new JButton(texto);
