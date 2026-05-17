@@ -148,13 +148,13 @@ public class TareaControlador implements ActionListener, KeyListener {
         boolean esEliminable = false; 
 
         if (id > 0) { 
-            if (!estadoActual.equals("En curso")) { 
+            // Bloquea la eliminación si está "En curso" OR si ya está "Inactiva"
+            if (!estadoActual.equals("En curso") && !estadoActual.equals("Inactiva")) { 
                 esEliminable = true; 
             }
         }
-
         return esEliminable; 
-    }
+    }    
     
     private void Filtro() {
         vista.modelo.setRowCount(0);
@@ -254,13 +254,15 @@ public class TareaControlador implements ActionListener, KeyListener {
         }
 
         if (e.getSource() == vista.btnEliminar) {
-            if (vista.txtId.getText().isEmpty()) {
+            int fila = vista.tablaTareas.getSelectedRow(); // Captura la fila seleccionada
+            if (fila == -1) {
                 JOptionPane.showMessageDialog(vista, "Seleccione una tarea de la tabla");
                 return;
             }
             
-            int id = Integer.parseInt(vista.txtId.getText());
-            String estado = vista.cbxEstado.getSelectedItem().toString();
+            // Extrae el ID y el Estado directamente desde las columnas de la tabla de la vista
+            int id = Integer.parseInt(vista.tablaTareas.getValueAt(fila, 0).toString());
+            String estado = vista.tablaTareas.getValueAt(fila, 3).toString(); // Ajustar el índice de la columna si es necesario
             
             if (validarEstadoEliminacion(id, estado)) {
                 if (JOptionPane.showConfirmDialog(vista, "¿Seguro que desea dar de baja esta tarea?", "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
@@ -273,7 +275,12 @@ public class TareaControlador implements ActionListener, KeyListener {
                     }
                 }
             } else {
-                JOptionPane.showMessageDialog(vista, "No se puede eliminar una tarea que ya está 'En curso'");
+                // Compara ignorando mayúsculas/minúsculas para evitar fallos de formato en cadenas
+                if (estado.equalsIgnoreCase("Inactiva")) {
+                    JOptionPane.showMessageDialog(vista, "No se puede eliminar porque esta tarea ya se encuentra 'Inactiva'", "Advertencia", JOptionPane.WARNING_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(vista, "No se puede eliminar una tarea que ya está 'En curso'", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
 
