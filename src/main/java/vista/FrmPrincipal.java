@@ -29,7 +29,8 @@ public class FrmPrincipal extends JFrame {
 
     private JPanel pnlContenido;
     private CardLayout cardLayout;
-    private Persona usuarioLogeado; // Guardamos al usuario que entró
+    private Persona usuarioLogeado;
+    private FrmPerfilVoluntario pnlPerfil;
 
     // Constructor actualizado para recibir al usuario
     public FrmPrincipal(Persona usuario) {
@@ -82,6 +83,7 @@ public class FrmPrincipal extends JFrame {
 
         if (usuarioLogeado instanceof Voluntario) {
             pnlBotones.add(crearBotonMenu("Mi Perfil", "PERFIL"));
+            pnlBotones.add(crearBotonMenu("Ser voluntario","INSCRIBIRSE"));
         }
 
         pnlBotones.add(Box.createVerticalStrut(15));
@@ -155,12 +157,13 @@ public class FrmPrincipal extends JFrame {
         // 2. CORRECCIÓN: Instanciar según el rol
         if (usuarioLogeado instanceof Administrador) {
             instanciarModulosAdmin();
-            // Registramos el Dashboard para el Admin (puede ser el mismo de bienvenida por ahora)
-            pnlContenido.add(crearPanelBienvenida(), "DASHBOARD");
-        } else if (usuarioLogeado instanceof Voluntario) {
-            // LLAMADA CRÍTICA: Aquí es donde se crean las Cards
-            instanciarModulosVoluntario();
-        }
+        }else if (usuarioLogeado instanceof Voluntario) {
+            this.pnlPerfil = new FrmPerfilVoluntario((Voluntario) usuarioLogeado);
+            pnlContenido.add(pnlPerfil, "PERFIL");
+            
+            FrmExplorarIniciativas pnlExplorar = new FrmExplorarIniciativas((Voluntario) usuarioLogeado);
+            pnlContenido.add(pnlExplorar, "INSCRIBIRSE");
+            }
 
         add(pnlContenido, BorderLayout.CENTER);
         cardLayout.show(pnlContenido, "BIENVENIDA");
@@ -258,6 +261,9 @@ public class FrmPrincipal extends JFrame {
 
         btn.addActionListener(e -> {
             try {
+                if ("PERFIL".equals(nombreCarta) && pnlPerfil != null) {
+                    pnlPerfil.cargarIniciativas();
+                }
                 cardLayout.show(pnlContenido, nombreCarta);
             } catch (Exception ex) {
                 System.out.println("Pantalla no programada aún: " + nombreCarta);

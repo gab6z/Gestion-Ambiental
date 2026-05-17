@@ -54,16 +54,28 @@ public abstract class Persona {
         this.correo = valor;
     }
 
-    // Getters y Setters restantes (telefono, genero, estado, contrasena...)
     public int getIdPersona() { return idPersona; }
     public void setIdPersona(int idPersona) { this.idPersona = idPersona; }
     public String getCedula() { return cedula; }
     public String getNombres_completos() { return nombres_completos; }
     public String getCorreo() { return correo; }
     public String getContrasena() { return contrasena; }
-    public void setContrasena(String contrasena) { this.contrasena = contrasena; }
+    public void setContrasena(String contrasena) {
+            String valor = validarNoVacio(contrasena, "contraseña");
+            if (valor.length() > 10) {
+                throw new IllegalArgumentException("La contraseña no puede exceder los 10 caracteres.");
+            } 
+            this.contrasena = valor;
+        }    
     public String getTelefono() { return telefono; }
-    public void setTelefono(String telefono) { this.telefono = telefono; }
+    public void setTelefono(String telefono) {
+            String valor = validarNoVacio(telefono, "teléfono");
+            // Valida que sean exactamente 10 dígitos numéricos
+            if (!valor.matches("^[0-9]{10}$")) {
+                throw new IllegalArgumentException("El teléfono debe contener exactamente 10 dígitos numéricos.");
+            }
+            this.telefono = valor;
+        }    
     public String getGenero() { return genero; }
     public void setGenero(String genero) { this.genero = genero; }
     public String getEstado() { return estado; }

@@ -8,14 +8,25 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
+/**
+ * Clase de Acceso a Datos (DAO) para la entidad Voluntario.
+ * Gestiona la persistencia en las tablas PERSONA y VOLUNTARIO de forma sincronizada.
+ * Implementa transacciones para asegurar la integridad referencial.
+ * * @author EDUARDO
+ * @version 1.1
+ * @since 2026-05-07
+ */
 public class VoluntarioDAO {
-
+    /**
+     * Convierte una fila del ResultSet en un objeto Voluntario.
+     * @param rs El conjunto de resultados de la consulta SQL.
+     * @return Un objeto {@link Voluntario} mapeado.
+     * @throws SQLException Si hay errores al leer las columnas.
+     */
     private Voluntario mapear(ResultSet rs) throws SQLException {
         try {
             Voluntario v = new Voluntario();
-            // Datos heredados de la tabla PERSONA
-            v.setIdPersona(rs.getInt("id_persona")); // ¡Nuevo setter que debes agregar a tu clase Persona/Voluntario!
+            v.setIdPersona(rs.getInt("id_persona")); 
             v.setCedula(rs.getString("cedula"));
             v.setNombres_completos(rs.getString("nombres_completos"));
             v.setCorreo(rs.getString("correo_electronico"));
@@ -23,7 +34,6 @@ public class VoluntarioDAO {
             v.setGenero(rs.getString("genero"));
             v.setEstado(rs.getString("estado"));
             
-            // Datos específicos de la tabla VOLUNTARIO
             v.setId_voluntario(rs.getInt("id_voluntario"));
             v.setDisponibilidad_dias(rs.getString("disponibilidad"));
             v.setHabilidades(rs.getString("habilidades"));
@@ -34,7 +44,12 @@ public class VoluntarioDAO {
             return null;
         }
     }
-
+    /**
+     * Inserta un nuevo voluntario realizando una operación atómica en dos tablas.
+     * Utiliza RETURN_GENERATED_KEYS para vincular la Persona con el Voluntario.
+     * @param v El voluntario a registrar.
+     * @throws SQLException Si falla la inserción; realiza rollback automático.
+     */
     public void insertar(Voluntario v) throws SQLException {
         String sqlPersona = "INSERT INTO PERSONA (cedula, contrasena, nombres_completos, correo_electronico, telefono, genero, estado) VALUES (?, ?, ?, ?, ?, ?, ?)";
         String sqlVoluntario = "INSERT INTO VOLUNTARIO (id_persona, habilidades, disponibilidad) VALUES (?, ?, ?)";
@@ -42,9 +57,8 @@ public class VoluntarioDAO {
         Connection con = null;
         try {
             con = ConexionDB.getConnection(); 
-            con.setAutoCommit(false); // Transacción iniciada
+            con.setAutoCommit(false); 
 
-            // 1. Guardar Padre (Persona)
             PreparedStatement psP = con.prepareStatement(sqlPersona, Statement.RETURN_GENERATED_KEYS);
             psP.setString(1, v.getCedula());
             psP.setString(2, v.getContrasena()); 
@@ -55,7 +69,7 @@ public class VoluntarioDAO {
             psP.setString(7, v.getEstado());
             psP.executeUpdate();
 
-            // Capturar el ID generado
+            
             ResultSet rs = psP.getGeneratedKeys();
             int idPersonaGenerado = 0;
             if (rs.next()) {
@@ -63,7 +77,6 @@ public class VoluntarioDAO {
             }
             psP.close();
 
-            // 2. Guardar Hijo (Voluntario)
             PreparedStatement psV = con.prepareStatement(sqlVoluntario);
             psV.setInt(1, idPersonaGenerado);
             psV.setString(2, v.getHabilidades());
@@ -71,15 +84,19 @@ public class VoluntarioDAO {
             psV.executeUpdate();
             psV.close();
 
-            con.commit(); // Confirmar cambios en ambas tablas
+            con.commit(); 
         } catch (SQLException e) {
-            if (con != null) con.rollback(); // Deshacer todo si hay error
+            if (con != null) con.rollback(); 
             throw e;
         } finally {
             if (con != null) con.close();
         }
     }
-
+    /**
+     * Obtiene todos los voluntarios activos vinculando las tablas mediante un INNER JOIN.
+     * @return List de {@link Voluntario}.
+     * @throws SQLException Si ocurre un error en la consulta.
+     */
     public List<Voluntario> listar() throws SQLException {
         List<Voluntario> lista = new ArrayList<>();
         String sql = "SELECT p.*, v.id_voluntario, v.habilidades, v.disponibilidad " +
@@ -103,7 +120,12 @@ public class VoluntarioDAO {
         }
         return lista;
     }
-
+    /**
+     * Busca un voluntario por su número de cédula.
+     * @param cedula Cédula del voluntario.
+     * @return {@link Optional} conteniendo al voluntario si se encuentra.
+     * @throws SQLException Si hay un error de conexión o SQL.
+     */
     public Optional<Voluntario> buscarPorCedula(String cedula) throws SQLException {
         String sql = "SELECT p.*, v.id_voluntario, v.habilidades, v.disponibilidad " +
                      "FROM PERSONA p " +
@@ -149,7 +171,11 @@ public class VoluntarioDAO {
         }
         return lista;
     }
-
+    /**
+     * Actualiza la información de un voluntario en ambas tablas dentro de una transacción.
+     * @param v Objeto voluntario con los datos actualizados.
+     * @throws SQLException Si la actualización falla.
+     */
     public void actualizar(Voluntario v) throws SQLException {
         String sqlPersona = "UPDATE PERSONA SET nombres_completos=?, correo_electronico=?, telefono=?, genero=?, estado=? WHERE cedula=?";
         String sqlVoluntario = "UPDATE VOLUNTARIO SET habilidades=?, disponibilidad=? WHERE id_persona=(SELECT id_persona FROM PERSONA WHERE cedula=?)";
@@ -159,7 +185,6 @@ public class VoluntarioDAO {
             con = ConexionDB.getConnection();
             con.setAutoCommit(false); // Transacción iniciada
             
-            // 1. Actualizar Padre
             PreparedStatement psP = con.prepareStatement(sqlPersona);
             psP.setString(1, v.getNombres_completos());
             psP.setString(2, v.getCorreo());
@@ -170,7 +195,6 @@ public class VoluntarioDAO {
             psP.executeUpdate();
             psP.close();
 
-            // 2. Actualizar Hijo
             PreparedStatement psV = con.prepareStatement(sqlVoluntario);
             psV.setString(1, v.getHabilidades());
             psV.setString(2, v.getDisponibilidad_dias());
@@ -186,13 +210,16 @@ public class VoluntarioDAO {
             if (con != null) con.close();
         }
     }
-
+    /**
+     * Realiza un borrado lógico cambiando el estado del voluntario a 'Inactivo'.
+     * @param idVoluntario ID del voluntario a desactivar.
+     * @return true si la operación afectó a alguna fila.
+     * @throws SQLException Si hay un error SQL.
+     */
     public boolean eliminarLogico(int idVoluntario) throws SQLException {
-        // En MySQL podemos usar un JOIN dentro del UPDATE para apagar a la persona
-        // usando el ID del voluntario que le enviemos.
-        String sql = "UPDATE PERSONA p INNER JOIN VOLUNTARIO v ON p.id_persona = v.id_persona " +
-                     "SET p.estado='Inactivo' WHERE v.id_voluntario=?";
-                     
+        String sql = "UPDATE PERSONA SET estado='Inactivo' " +
+                     "WHERE id_persona = (SELECT id_persona FROM VOLUNTARIO WHERE id_voluntario = ?)";
+
         Connection con = null;
         PreparedStatement ps = null;
         try {
@@ -204,12 +231,15 @@ public class VoluntarioDAO {
             ConexionDB.cerrar(null, ps, con);
         }
     }
-
-    // ==========================================
-    // MÉTODO NUEVO: VALIDACIÓN DEL LOGIN
-    // ==========================================
+    /**
+     * Valida las credenciales de acceso y determina el rol del usuario (Administrador o Voluntario).
+     * @param correo Credencial de correo.
+     * @param contrasena Credencial de contraseña.
+     * @return Un objeto {@link Persona} (que puede ser Administrador o Voluntario).
+     * @throws SQLException Si falla la consulta de autenticación.
+     */
     public Persona validarLogin(String correo, String contrasena) throws SQLException {
-        String sql = "SELECT p.*, a.id_admin, v.id_voluntario " +
+        String sql = "SELECT p.*, a.id_admin, v.id_voluntario, v.habilidades, v.disponibilidad " +
                      "FROM PERSONA p " +
                      "LEFT JOIN ADMINISTRADOR a ON p.id_persona = a.id_persona " +
                      "LEFT JOIN VOLUNTARIO v ON p.id_persona = v.id_persona " +
@@ -227,24 +257,24 @@ public class VoluntarioDAO {
             rs = ps.executeQuery();
 
             if (rs.next()) {
-                // Evaluamos a qué tabla hija pertenece
+                // Caso 1: Es Administrador
                 if (rs.getObject("id_admin") != null) {
                     Administrador admin = new Administrador();
                     admin.setIdPersona(rs.getInt("id_persona"));
                     admin.setNombres_completos(rs.getString("nombres_completos"));
+                    // (Opcional) Llenar correo/cedula si los necesitas en el perfil del admin
                     return admin;
                 } 
+                // Caso 2: Es Voluntario
                 else if (rs.getObject("id_voluntario") != null) {
-                    Voluntario vol = new Voluntario();
-                    vol.setIdPersona(rs.getInt("id_persona"));
-                    vol.setId_voluntario(rs.getInt("id_voluntario"));
-                    vol.setNombres_completos(rs.getString("nombres_completos"));
-                    return vol;
+                    // USAMOS TU MÉTODO mapear(rs) QUE YA ESTÁ BIEN HECHO
+                    // Esto llenará cedula, nombres, correo, telefono, habilidades y disponibilidad
+                    return mapear(rs); 
                 }
             }
         } finally {
             ConexionDB.cerrar(rs, ps, con);
         }
-        return null; // Si no encontró a nadie
+        return null;
     }
 }
