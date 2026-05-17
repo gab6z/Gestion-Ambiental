@@ -31,7 +31,6 @@ import modelo.Sector;
  * @version 1.2
  */
 public class IniciativaControlador {
-
     private final IniciativaService iniciativaService = new IniciativaService();
     private final SectorService sectorService = new SectorService();
     private final TareaService tareaService = new TareaService();
@@ -41,18 +40,31 @@ public class IniciativaControlador {
     private List<Iniciativa> iniciativasActuales;
     
     /**
-     * Constructor del controlador que asocia la vista y arranca los componentes
-     * de datos. Enlaza los escuchadores de eventos y rellena los componentes
-     * interactivos de la UI.
+     * Constructor original del sistema, inicializa UI y BD.
      *
-     * * @param panel El panel de la interfaz gráfica (UI) que se va a
-     * controlar.
+     * @param panel El panel de la interfaz gráfica.
      */
     public IniciativaControlador(IniciativaPnl panel) {
         this.panel = panel;
         iniciarEventos();
-        cargarCombos(); 
+        cargarCombos();
         cargarTabla();
+    }
+
+    /**
+     * Constructor alternativo para pruebas unitarias. Omite la inicialización
+     * de UI y BD cuando modoTest es true.
+     *
+     * @param panel El panel de la UI, puede ser null en contexto de testing.
+     * @param modoTest Si es true, omite la inicialización de UI y BD.
+     */
+    public IniciativaControlador(IniciativaPnl panel, boolean modoTest) {
+        this.panel = panel;
+        if (!modoTest) {
+            iniciarEventos();
+            cargarCombos();
+            cargarTabla();
+        }
     }
     
     /**
@@ -221,7 +233,7 @@ public class IniciativaControlador {
      * @throws IllegalArgumentException Si la fecha de fin es anterior a la de
      * ejecución, o si las horas se solapan de manera ilógica.
      */
-    private void validarFechasYTiempos(Iniciativa ini) throws IllegalArgumentException {
+    public void validarFechasYTiempos(Iniciativa ini) throws IllegalArgumentException {
         if (ini.getFechaFin() != null && ini.getFechaEjecucion() != null) {
             if (ini.getFechaFin().before(ini.getFechaEjecucion())) {
                 throw new IllegalArgumentException("La fecha de finalización no puede ser anterior a la de ejecución.");
@@ -245,7 +257,7 @@ public class IniciativaControlador {
      * son menores o iguales a cero, o si la descripción excede los 500
      * caracteres de persistencia.
      */
-    private void validarPresupuestoYLogistica(Iniciativa ini) throws IllegalArgumentException {
+    public void validarPresupuestoYLogistica(Iniciativa ini) throws IllegalArgumentException {
         if (ini.getPresupuesto() <= 0) {
             throw new IllegalArgumentException("El presupuesto debe ser una cantidad mayor a 0.");
         }
@@ -254,7 +266,7 @@ public class IniciativaControlador {
             throw new IllegalArgumentException("Debe asignar una cantidad de participantes mayor a 0.");
         }
         
-        if (ini.getMeta() <= 5000){
+        if (ini.getMeta() >= 5000){
             throw new IllegalArgumentException("Debe asignar una cantidad de participantes menor a 5000.");
         }
         
@@ -271,7 +283,7 @@ public class IniciativaControlador {
      * @throws IllegalArgumentException Si algún campo obligatorio está vacío o
      * contiene un valor inválido.
      */
-    private void validarCamposObligatorios(Iniciativa ini) throws IllegalArgumentException {
+    public void validarCamposObligatorios(Iniciativa ini) throws IllegalArgumentException {
 
         if (ini.getTitulo() == null || ini.getTitulo().trim().isEmpty()) {
             throw new IllegalArgumentException("El título de la iniciativa es obligatorio.");

@@ -55,6 +55,7 @@ public class IniciativaPnl extends JPanel {
     private JComboBox<String> cmbFiltroEstado;
     private JButton btnFiltrar;
     private JButton btnLimpiarFiltro;
+    private com.toedter.calendar.JDateChooser jdFechaFin;
     
     /**
      * Constructor por defecto del panel. Arranca y ensambla todos los
@@ -142,6 +143,12 @@ public class IniciativaPnl extends JPanel {
         jdFechaEjecucion.setDateFormatString("yyyy-MM-dd"); // Para que visualmente se vea así
         gbc.gridy = f++;
         gblForm.add(jdFechaEjecucion, gbc);
+        
+        agregarEtiqueta(gblForm, gbc, "Fecha Fin:", f++);
+        jdFechaFin = new com.toedter.calendar.JDateChooser();
+        jdFechaFin.setDateFormatString("yyyy-MM-dd");
+        gbc.gridy = f++;
+        gblForm.add(jdFechaFin, gbc);
 
         agregarEtiqueta(gblForm, gbc, "Descripción Logística:", f++);
         txtLogistica = new JTextArea(3, 20);
@@ -393,7 +400,11 @@ public class IniciativaPnl extends JPanel {
             i.setFechaEjecucion(new java.sql.Date(
                     jdFechaEjecucion.getDate().getTime()));
         }
-
+        
+        if (jdFechaFin.getDate() != null) {
+            i.setFechaFin(new java.sql.Date(
+                    jdFechaFin.getDate().getTime()));       
+        }
         return i;
     }
 
@@ -411,6 +422,7 @@ public class IniciativaPnl extends JPanel {
         txtPresupuesto.setText(String.valueOf(ini.getPresupuesto()));
         txtMeta.setText(String.valueOf(ini.getMeta()));
         jdFechaEjecucion.setDate(ini.getFechaEjecucion());
+        jdFechaFin.setDate(ini.getFechaFin());
 
 
         for (int i = 0; i < cmbSector.getItemCount(); i++) {
@@ -515,6 +527,7 @@ public class IniciativaPnl extends JPanel {
         txtPresupuesto.setText("");
         jdFechaEjecucion.setDate(null);
         txtMeta.setText("");
+        jdFechaFin.setDate(null);
         
         for (JCheckBox chk : listaChecksVoluntarios) {
             chk.setSelected(false);
