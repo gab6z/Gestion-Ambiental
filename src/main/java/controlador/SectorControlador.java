@@ -4,18 +4,6 @@
  */
 package controlador;
 
-/**
- * Descripción: Controlador principal del módulo de Sectores.
- * Es el "director de orquesta" que escucha los eventos de la interfaz gráfica (Vista)
- * y delega las operaciones de guardado, eliminación y búsqueda a la capa de Servicio.
- * Además, gestiona la generación de reportes en PDF.
- * Proyecto: Sistema de Gestión Ambiental (EcoVida)
- * 
- * @author Gabriela Solange Gonzalez Roman
- * @version 1.0
- * @since 2026-05-05
- */
-
 import modelo.Sector;
 import vista.SectoresPnl;
 import service.SectorService;
@@ -34,6 +22,18 @@ import com.itextpdf.text.pdf.PdfWriter;
 
 import javax.swing.JFileChooser;
 import java.io.FileOutputStream;
+
+/**
+ * Descripción: Controlador principal del módulo de Sectores.
+ * Es el "director de orquesta" que escucha los eventos de la interfaz gráfica (Vista)
+ * y delega las operaciones de guardado, eliminación y búsqueda a la capa de Servicio.
+ * Además, gestiona la generación de reportes en PDF.
+ * Proyecto: Sistema de Gestión Ambiental (EcoVida)
+ * 
+ * @author Gabriela Solange Gonzalez Roman
+ * @version 1.0
+ * @since 2026-05-05
+ */
 
 public class SectorControlador {
 

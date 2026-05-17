@@ -4,6 +4,12 @@
  */
 package vista;
 
+import modelo.Sector;
+import java.awt.*;
+import java.util.List;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+
 /**
  * Descripción: Panel de interfaz gráfica de usuario (GUI) para la gestión de Sectores.
  * Contiene el formulario de registro, la tabla interactiva de datos y la barra 
@@ -14,12 +20,6 @@ package vista;
  * @version 1.0
  * @since 2026-05-05
  */
-
-import modelo.Sector;
-import java.awt.*;
-import java.util.List;
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 
 public class SectoresPnl extends JPanel {
 

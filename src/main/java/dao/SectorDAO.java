@@ -4,6 +4,14 @@
  */
 package dao;
 
+import modelo.Sector;
+import utilidades.ConexionDB;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 /**
  * Descripción: Clase de Acceso a Datos (Data Access Object) para la entidad Sector.
  * Contiene toda la lógica de persistencia y se encarga exclusivamente de ejecutar
@@ -14,13 +22,6 @@ package dao;
  * @version 1.0
  * @since 2026-05-05
  */
-import modelo.Sector;
-import utilidades.ConexionDB;
-
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 public class SectorDAO {
 

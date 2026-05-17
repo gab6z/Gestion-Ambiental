@@ -95,8 +95,8 @@ public class TareaControlador implements ActionListener, KeyListener {
     }
 
     /**
-     * MÉTODO 1 PARA V&V: Procesa el guardado/actualización de tareas.
-     * Evaluado mediante Complejidad Ciclomática (Análisis Estático).
+    * PARA V y V: Procesa el guardado/actualización de tareas.
+    * Evaluado mediante Complejidad Ciclomática (Análisis Estático).
      * @return Código de estado String para validación en pruebas unitarias.
      * @throws Exception Si ocurre un error de conexión con la base de datos.
      */
@@ -134,7 +134,7 @@ public class TareaControlador implements ActionListener, KeyListener {
     }
 
     /**
-     * MÉTODO 2 PARA V&V: Determina si una tarea es apta para eliminación.
+     * PARA V y V: Determina si una tarea es apta para eliminación.
      * Evaluado mediante Análisis DU-Chain (Definición-Uso).
      * @param id ID de la tarea a verificar.
      * @param estadoActual Estado actual de la tarea.
