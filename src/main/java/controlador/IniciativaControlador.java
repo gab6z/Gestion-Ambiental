@@ -270,7 +270,7 @@ public class IniciativaControlador {
                 ruta += ".pdf";
             }
 
-            Document documento = new Document(PageSize.A4.rotate()); // Horizontal para que quepa la tabla
+            Document documento = new Document(PageSize.A4.rotate());
             try {
                 PdfWriter.getInstance(documento, new FileOutputStream(ruta));
                 documento.open();
