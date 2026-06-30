@@ -423,8 +423,11 @@ public class IniciativaPnl extends JPanel {
         txtMeta.setText(String.valueOf(ini.getMeta()));
         jdFechaEjecucion.setDate(ini.getFechaEjecucion());
         jdFechaFin.setDate(ini.getFechaFin());
-
-
+ 
+        if (ini.getEstado() != null) {
+            cmbEstado.setSelectedItem(ini.getEstado());
+        }
+        
         for (int i = 0; i < cmbSector.getItemCount(); i++) {
             if (cmbSector.getItemAt(i).getIdSector() == ini.getIdSector()) {
                 cmbSector.setSelectedIndex(i);

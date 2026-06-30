@@ -288,7 +288,7 @@ public class IniciativaDAO {
      * inscrito un voluntario específico. Optimiza las consultas mediante el uso
      * de la cláusula estructurada {@code try-with-resources}.
      *
-     * * @param idVoluntario Identificador único del voluntario logueado.
+     * @param idVoluntario Identificador único del voluntario logueado.
      * @return Una colección {@link List} que contiene los identificadores de
      * sus iniciativas asignadas.
      * @throws SQLException Si la conexión falla o el query no puede resolverse
@@ -306,5 +306,38 @@ public class IniciativaDAO {
             }
         }
         return ids;
+    }
+    
+    /**
+     * Busca una iniciativa específica por su ID único para auditar su estado
+     * actual.
+     *
+     * @param idIniciativa Identificador único de la iniciativa.
+     * @return El objeto {@link Iniciativa} encontrado, o null si no existe.
+     * @throws SQLException Si ocurre un error en la consulta SQL.
+     */
+    public Iniciativa buscarPorId(int idIniciativa) throws SQLException {
+        String sql = "SELECT * FROM INICIATIVA WHERE id_iniciativa = ?";
+        Connection cn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        Iniciativa ini = null;
+
+        try {
+            cn = ConexionDB.getConnection();
+            ps = cn.prepareStatement(sql);
+            ps.setInt(1, idIniciativa);
+            rs = ps.executeQuery();
+
+            if (rs.next()) {
+                ini = new Iniciativa();
+                ini.setIdIniciativa(rs.getInt("id_iniciativa"));
+                ini.setIdSector(rs.getInt("id_sector"));
+                ini.setEstado(rs.getString("estado_planificacion"));
+            }
+        } finally {
+            ConexionDB.cerrar(rs, ps, cn);
+        }
+        return ini;
     }
 }

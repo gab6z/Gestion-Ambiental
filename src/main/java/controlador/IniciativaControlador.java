@@ -27,7 +27,7 @@ import modelo.Sector;
  * una iniciativa (CRUD), la asignación múltiple de voluntarios participantes y
  * la auditoría visual mediante reportes PDF exportables.
  *
- * * @author Solis Caballero Geovanny Andrés
+ * @author Solis Caballero Geovanny Andrés
  * @version 1.2
  */
 public class IniciativaControlador {
@@ -161,6 +161,7 @@ public class IniciativaControlador {
             validarCamposObligatorios(ini); 
             validarFechasYTiempos(ini);
             validarPresupuestoYLogistica(ini);
+            validarEstadoYSector(ini); 
             int idReal;
             if (ini.getIdIniciativa() == 0) {
                 idReal = iniciativaDAO.insertar(ini);
@@ -228,7 +229,7 @@ public class IniciativaControlador {
      * Aplica reglas de negocio temporales de la aplicación para evitar
      * inconsistencias cronológicas.
      *
-     * * @param ini El objeto iniciativa con las fechas y tiempos provistos por
+     * @param ini El objeto iniciativa con las fechas y tiempos provistos por
      * el formulario.
      * @throws IllegalArgumentException Si la fecha de fin es anterior a la de
      * ejecución, o si las horas se solapan de manera ilógica.
@@ -252,7 +253,7 @@ public class IniciativaControlador {
      * datos logísticos. Protege al sistema contra desbordamientos de datos e
      * inconsistencias monetarias.
      *
-     * * @param ini El objeto iniciativa a ser auditado.
+     * @param ini El objeto iniciativa a ser auditado.
      * @throws IllegalArgumentException Si el presupuesto o la meta cuantitativa
      * son menores o iguales a cero, o si la descripción excede los 500
      * caracteres de persistencia.
@@ -313,10 +314,40 @@ public class IniciativaControlador {
             throw new IllegalArgumentException("La fecha de ejecución es obligatoria.");
         }
 
-        if (ini.getIdSector() > 0) { // solo si hay sector válido
+        if (ini.getIdSector() > 0) {
             List<Voluntario> seleccionados = panel.getVoluntariosSeleccionados();
             if (seleccionados == null || seleccionados.isEmpty()) {
                 throw new IllegalArgumentException("Debe asignar al menos un voluntario.");
+            }
+        }
+    }
+    
+    /**
+     * Valida que no se altere el sector de una iniciativa si esta ya se
+     * encuentra en estado "En ejecución".
+     *
+     * @param ini El objeto iniciativa con los datos del formulario.
+     * @throws IllegalArgumentException Si se intenta modificar el sector en un
+     * estado prohibido.
+     */
+    public void validarEstadoYSector(Iniciativa ini) throws IllegalArgumentException {
+        if (ini.getIdIniciativa() > 0) {
+            try {
+                Iniciativa iniOriginal = iniciativaDAO.buscarPorId(ini.getIdIniciativa());
+
+                if (iniOriginal != null) {
+                    String estadoAct = iniOriginal.getEstado();
+
+                    if ("En ejecución".equalsIgnoreCase(estadoAct) || "En Curso".equalsIgnoreCase(estadoAct)) {
+                        if (iniOriginal.getIdSector() != ini.getIdSector()) {
+                            throw new IllegalArgumentException("No se puede modificar el sector de una iniciativa que ya se encuentra en ejecución.");
+                        }
+                    }
+                }
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Error de sistema al validar el estado: " + e.getMessage());
             }
         }
     }
@@ -368,16 +399,12 @@ public class IniciativaControlador {
      */
     private boolean filtrarPorFecha(Iniciativa ini, Date desde, Date hasta) {
         Date fechaEj = ini.getFechaEjecucion();
+
         if (fechaEj == null) {
             return false;
         }
-        if (desde != null && fechaEj.before(desde)) {
-            return false;
-        }
-        if (hasta != null && fechaEj.after(hasta)) {
-            return false;
-        }
-        return true;
+        
+        return (desde == null || !fechaEj.before(desde)) && (hasta == null || !fechaEj.after(hasta));
     }
 
     /**
@@ -405,12 +432,12 @@ public class IniciativaControlador {
      * @return true si la iniciativa pasa el filtro de estado.
      */
     private boolean filtrarPorEstado(Iniciativa ini, String estado) {
-        if (estado == null || estado.equals("Todos")) {
+        if (estado == null || "Todos".equals(estado)) {
             return true;
         }
         return estado.equalsIgnoreCase(ini.getEstado());
     }
- 
+    
     /**
      * Genera y exporta dinámicamente un documento formal en formato PDF (A4 en
      * orientación apaisada) conteniendo los registros completos almacenados en
