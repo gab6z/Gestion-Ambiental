@@ -227,4 +227,17 @@ public class SectorDAO {
         }
         return false;
     }
+    
+    public boolean existeNombre(String nombreZona, int idExcluir) throws SQLException {
+    String sql = "SELECT COUNT(*) FROM SECTOR WHERE LOWER(nombre_zona) = LOWER(?) AND id_sector != ?";
+    try (Connection cn = ConexionDB.getConnection();
+         PreparedStatement ps = cn.prepareStatement(sql)) {
+        ps.setString(1, nombreZona.trim());
+        ps.setInt(2, idExcluir);
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getInt(1) > 0;
+        }
+    }
+    return false;
+}
 }

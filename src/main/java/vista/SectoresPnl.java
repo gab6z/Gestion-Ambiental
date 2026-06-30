@@ -127,7 +127,7 @@ public class SectoresPnl extends JPanel {
         btnEliminar = crearBoton("Eliminar", new Color(220, 53, 69));
         btnLimpiar = crearBoton("Limpiar", Color.GRAY);
 
-        btnActualizar.setEnabled(false); // Se activa al seleccionar una fila
+        btnActualizar.setEnabled(false); 
         btnEliminar.setEnabled(false);
 
         panelBotones.add(btnGuardar);
@@ -138,7 +138,7 @@ public class SectoresPnl extends JPanel {
         panelIzq.add(panelBotones, BorderLayout.SOUTH);
         add(panelIzq, BorderLayout.WEST);
 
-        JPanel panelDer = new JPanel(new BorderLayout(0, 10)); // Espacio entre filtros y tabla
+        JPanel panelDer = new JPanel(new BorderLayout(0, 10)); 
         panelDer.setBackground(Color.WHITE);
         panelDer.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(220, 220, 220)),

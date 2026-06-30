@@ -3,36 +3,35 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package vista;
+
 import dao.IniciativaDAO;
 import dao.ParticipacionDAO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.util.List;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.JTableHeader;
 import modelo.Iniciativa;
 import modelo.Voluntario;
-import modelo.Participacion;
+
 /**
- *
- * @author EDUARDO
+ * Panel para explorar iniciativas con un diseño moderno basado en Cards.
+ * @author EDUARDO 
  */
 public class FrmExplorarIniciativas extends JPanel {
-private JTable tabla;
-    private DefaultTableModel modelo;
+
+    private JPanel pnlTarjetasContenedor;
     private Voluntario voluntarioActual;
     
-    // Paleta de colores consistente
     private final Color VERDE_ECO = new Color(23, 93, 62);
-    private final Color GRIS_CLARO = new Color(245, 245, 245);
+    private final Color FONDO_APP = new Color(245, 247, 250);
+    private final Color FONDO_TARJETA = Color.WHITE;
 
     public FrmExplorarIniciativas(Voluntario v) {
         this.voluntarioActual = v;
         setLayout(new BorderLayout(0, 20)); 
-        setBackground(Color.WHITE);
-        setBorder(new EmptyBorder(30, 30, 30, 30));
+        setBackground(FONDO_APP); 
+        setBorder(new EmptyBorder(30, 40, 30, 40));
         
         inicializarComponentes();
         cargarDatos();
@@ -45,53 +44,17 @@ private JTable tabla;
         lblTitulo.setHorizontalAlignment(SwingConstants.LEFT);
         add(lblTitulo, BorderLayout.NORTH);
 
-        String[] columnas = {"ID", "Título de la Iniciativa", "Sector / Zona", "Tarea Principal", "Fecha de Ejecución"};
-        modelo = new DefaultTableModel(columnas, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
-        
-        tabla = new JTable(modelo);
-        tabla.setRowHeight(35); 
-        tabla.setSelectionBackground(new Color(200, 230, 201));
-        tabla.setSelectionForeground(Color.BLACK);
-        tabla.setShowVerticalLines(false); 
-        tabla.setGridColor(new Color(230, 230, 230));
+        pnlTarjetasContenedor = new JPanel();
+        pnlTarjetasContenedor.setLayout(new BoxLayout(pnlTarjetasContenedor, BoxLayout.Y_AXIS));
+        pnlTarjetasContenedor.setBackground(FONDO_APP);
 
-        JTableHeader header = tabla.getTableHeader();
-        header.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        header.setBackground(VERDE_ECO);
-        header.setForeground(Color.WHITE);
-        header.setPreferredSize(new Dimension(0, 40));
-
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        JScrollPane scrollPane = new JScrollPane(pnlTarjetasContenedor);
+        scrollPane.setBorder(null); 
+        scrollPane.getViewport().setBackground(FONDO_APP);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16); 
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         
-        for (int i = 0; i < tabla.getColumnCount(); i++) {
-            tabla.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
-        }
-
-        tabla.getColumnModel().getColumn(0).setMinWidth(0);
-        tabla.getColumnModel().getColumn(0).setMaxWidth(0);
-        
-        JScrollPane scrollPane = new JScrollPane(tabla);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
-        scrollPane.getViewport().setBackground(Color.WHITE);
         add(scrollPane, BorderLayout.CENTER);
-
-        JButton btnInscribirse = new JButton("Postularme ahora");
-        btnInscribirse.setBackground(VERDE_ECO);
-        btnInscribirse.setForeground(Color.WHITE);
-        btnInscribirse.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        btnInscribirse.setFocusPainted(false);
-        btnInscribirse.setPreferredSize(new Dimension(200, 45));
-        btnInscribirse.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
-        btnInscribirse.addActionListener(e -> inscribirseAccion());
-        
-        JPanel pnlSur = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        pnlSur.setBackground(Color.WHITE);
-        pnlSur.add(btnInscribirse);
-        add(pnlSur, BorderLayout.SOUTH);
     }
 
     private void cargarDatos() {
@@ -99,36 +62,101 @@ private JTable tabla;
             IniciativaDAO dao = new IniciativaDAO();
             List<Iniciativa> lista = dao.listarTodas(); 
             
-            modelo.setRowCount(0);
+            pnlTarjetasContenedor.removeAll(); 
+            
+            boolean hayIniciativas = false;
+
             for (Iniciativa ini : lista) {
-                // Filtrar para no mostrar eliminadas
                 if (!"Eliminado".equalsIgnoreCase(ini.getEstado())) {
-                    modelo.addRow(new Object[]{
-                        ini.getIdIniciativa(),
-                        ini.getTitulo(),
-                        ini.getNombreSector(),
-                        ini.getNombreTarea(),
-                        ini.getFechaEjecucion()
-                    });
+                    pnlTarjetasContenedor.add(crearTarjeta(ini));
+                    pnlTarjetasContenedor.add(Box.createVerticalStrut(15)); 
+                    hayIniciativas = true;
                 }
             }
+
+            if (!hayIniciativas) {
+                JLabel lblVacio = new JLabel("No hay iniciativas disponibles en este momento.");
+                lblVacio.setFont(new Font("Segoe UI", Font.ITALIC, 16));
+                lblVacio.setForeground(Color.GRAY);
+                lblVacio.setAlignmentX(Component.CENTER_ALIGNMENT);
+                pnlTarjetasContenedor.add(Box.createVerticalStrut(50));
+                pnlTarjetasContenedor.add(lblVacio);
+            }
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error al cargar datos: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+        
+        pnlTarjetasContenedor.revalidate();
+        pnlTarjetasContenedor.repaint();
     }
 
-    private void inscribirseAccion() {
-        int fila = tabla.getSelectedRow();
-        if (fila == -1) {
-            JOptionPane.showMessageDialog(this, "Por favor, selecciona una iniciativa de la tabla.", "Atención", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+    /**
+     * Dibuja una tarjeta individual para una iniciativa.
+     */
+    private JPanel crearTarjeta(Iniciativa ini) {
+        JPanel tarjeta = new JPanel();
+        tarjeta.setLayout(new BorderLayout(15, 10));
+        tarjeta.setBackground(FONDO_TARJETA);
+        
+        tarjeta.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(new Color(220, 220, 220), 1, true),
+                new EmptyBorder(20, 25, 20, 25)
+        ));
+        
+        tarjeta.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
 
-        int idIni = (int) modelo.getValueAt(fila, 0);
-        String nombreIni = (String) modelo.getValueAt(fila, 1);
+        JPanel pnlInfo = new JPanel();
+        pnlInfo.setLayout(new BoxLayout(pnlInfo, BoxLayout.Y_AXIS));
+        pnlInfo.setBackground(FONDO_TARJETA);
 
+        JLabel lblTitulo = new JLabel(ini.getTitulo());
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblTitulo.setForeground(Color.BLACK);
+
+        JLabel lblDetalles = new JLabel("<html><b>Ubicación:</b> " + ini.getNombreSector() + 
+                                        " &nbsp;&nbsp;&nbsp; <b>Fecha:</b> " + ini.getFechaEjecucion() + "</html>");
+        lblDetalles.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblDetalles.setForeground(Color.DARK_GRAY);
+
+        JLabel lblTarea = new JLabel("Tarea principal: " + ini.getNombreTarea());
+        lblTarea.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+        lblTarea.setForeground(new Color(100, 100, 100));
+
+        pnlInfo.add(lblTitulo);
+        pnlInfo.add(Box.createVerticalStrut(8));
+        pnlInfo.add(lblDetalles);
+        pnlInfo.add(Box.createVerticalStrut(3));
+        pnlInfo.add(lblTarea);
+
+
+        JPanel pnlAccion = new JPanel(new GridBagLayout());
+        pnlAccion.setBackground(FONDO_TARJETA);
+
+        JButton btnPostular = new JButton("Postularme");
+        btnPostular.setBackground(VERDE_ECO);
+        btnPostular.setForeground(Color.WHITE);
+        btnPostular.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnPostular.setFocusPainted(false);
+        btnPostular.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnPostular.setPreferredSize(new Dimension(140, 40)); 
+        
+        btnPostular.addActionListener(e -> inscribirseAccion(ini.getIdIniciativa(), ini.getTitulo()));
+
+        pnlAccion.add(btnPostular);
+
+        tarjeta.add(pnlInfo, BorderLayout.CENTER);
+        tarjeta.add(pnlAccion, BorderLayout.EAST);
+
+        return tarjeta;
+    }
+
+    /**
+     * Lógica de postulación que recibe directamente los datos del botón presionado.
+     */
+    private void inscribirseAccion(int idIni, String nombreIni) {
         int confirmar = JOptionPane.showConfirmDialog(this, 
-            "¿Confirmas tu postulación para:\n" + nombreIni + "?", 
+            "¿Confirmas tu postulación para la iniciativa:\n'" + nombreIni + "'?", 
             "Confirmar Inscripción", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 
         if (confirmar == JOptionPane.YES_OPTION) {

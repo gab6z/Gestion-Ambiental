@@ -74,9 +74,10 @@ public class FrmPrincipal extends JFrame {
         pnlBotones.setBackground(COLOR_LATERAL);
         pnlBotones.setBorder(new EmptyBorder(0, 10, 0, 10));
 
-        pnlBotones.add(crearEtiquetaCategoria("PRINCIPAL"));
+        
 
         if (usuarioLogeado instanceof Voluntario) {
+            pnlBotones.add(crearEtiquetaCategoria("PRINCIPAL"));
             pnlBotones.add(crearBotonMenu("Dashboard", "DASHBOARD"));
             pnlBotones.add(crearBotonMenu("Mi Perfil", "PERFIL"));
             pnlBotones.add(crearBotonMenu("Ser voluntario","INSCRIBIRSE"));

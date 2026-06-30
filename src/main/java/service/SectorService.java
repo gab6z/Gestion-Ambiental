@@ -36,13 +36,16 @@ public class SectorService {
  * @throws SQLException si ocurre un error durante la operación en la base de datos.
  */
     public void guardarSector(Sector sector) throws SQLException {
+        if (sectorDAO.existeNombre(sector.getNombreZona(), sector.getIdSector())) {
+            throw new IllegalArgumentException("El nombre del sector ya se encuentra registrado.");
+        }
 
         if (sector.getIdSector() == 0) {
             sectorDAO.insertar(sector);
         } else {
             sectorDAO.actualizar(sector);
         }
-    }
+}
 
     /**
  * Obtiene una lista de sectores aplicando filtros de búsqueda.
@@ -74,7 +77,7 @@ public class SectorService {
         
       
         if (sectorDAO.tieneIniciativas(idSector)) {
-            throw new IllegalArgumentException("Restricción de seguridad: No se puede eliminar este sector porque tiene iniciativas ambientales asociadas en curso o registradas.");
+            throw new IllegalArgumentException("Error: No se puede eliminar el sector porque cuenta con registros dependientes");
         }
         
         boolean eliminado = sectorDAO.eliminar(idSector);
@@ -82,4 +85,6 @@ public class SectorService {
             throw new IllegalArgumentException("No se encontró el sector a eliminar en la base de datos.");
         }
     }
+    
+    
 }

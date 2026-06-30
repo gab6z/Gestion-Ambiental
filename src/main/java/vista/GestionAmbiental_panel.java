@@ -10,7 +10,6 @@ import javax.swing.table.DefaultTableModel;
  * Esta clase construye el formulario de registro y la tabla de visualización, 
  * aplicando los estilos visuales del proyecto EcoVida (colores, fuentes y bordes).
  * Representa la "Capa de Vista" en el patrón de arquitectura MVC.
- * 
  * Proyecto: Sistema de Gestión de Iniciativas de Preservación Ambiental (SGIPA)
  * @author Dominica Lilibeth Torres Bohorquez
  * @version 1.0
@@ -18,8 +17,8 @@ import javax.swing.table.DefaultTableModel;
  */
 public class GestionAmbiental_panel extends JPanel {
 
-    public JTextField txtRuc, txtNombreEntidad, txtCategoriaImpacto, txtMetaAnual, txtBuscar;
-    public JComboBox<String> cbxTipoAutorizacion, cbxUnidadMedida, cbxEstadoConvenio;
+    public JTextField txtRuc, txtNombreEntidad, txtMetaAnual, txtBuscar;
+    public JComboBox<String> cbxTipoAutorizacion, cbxUnidadMedida, cbxEstadoConvenio, cbxCategoria;
     public JButton btnGuardar, btnActualizar, btnEliminar, btnLimpiar, btnExportar; 
     public JTable tblGestion;
     public JLabel lblSimbolo;
@@ -73,8 +72,8 @@ public class GestionAmbiental_panel extends JPanel {
         gbc.gridy = fila++; formPanel.add(cbxTipoAutorizacion, gbc);
 
         agregarCampoFormulario(formPanel, gbc, "Categoría de Impacto:", fila++);
-        txtCategoriaImpacto = new JTextField();
-        gbc.gridy = fila++; formPanel.add(txtCategoriaImpacto, gbc);
+        cbxCategoria = new JComboBox<>(new String[]{"Alta", "Media", "Baja"});
+        gbc.gridy = fila++; formPanel.add( cbxCategoria, gbc);
 
         agregarCampoFormulario(formPanel, gbc, "Unidad de Medida:", fila++);
         cbxUnidadMedida = new JComboBox<>(new String[]{"Kilogramos", "Toneladas", "Unidades", "Hectáreas"});

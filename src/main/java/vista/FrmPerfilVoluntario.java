@@ -1,37 +1,28 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package vista;
 
 import dao.ParticipacionDAO;
-import javax.swing.Box;
-import javax.swing.JPanel;
-import java.awt.*;
 import javax.swing.*;
+import java.awt.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import modelo.Participacion;
 import modelo.Voluntario;
 import java.util.List;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumnModel;
 
 /**
- *
+ * Panel para visualizar el perfil del voluntario, datos personales e historial de participaciones.
  * @author EDUARDO
  */
-public class FrmPerfilVoluntario extends JPanel{
+public class FrmPerfilVoluntario extends JPanel {
     private final Color COLOR_PRIMARIO = new Color(23, 93, 62);
     private final Color COLOR_FONDO = new Color(245, 247, 250);
     private Voluntario voluntario;
-    private DefaultTableModel modeloTabla;
+    private JPanel pnlTarjetasContenedor;
 
     public FrmPerfilVoluntario(Voluntario v) {
         this.voluntario = v;
-        setLayout(new GridBagLayout());
-        setBackground(COLOR_FONDO);
+        setLayout(new BorderLayout());
+        setBackground(Color.WHITE);
         inicializarComponentes();
         cargarIniciativas();
     }
@@ -40,70 +31,69 @@ public class FrmPerfilVoluntario extends JPanel{
         JPanel pnlContenedor = new JPanel();
         pnlContenedor.setLayout(new BoxLayout(pnlContenedor, BoxLayout.Y_AXIS));
         pnlContenedor.setBackground(Color.WHITE);
-        pnlContenedor.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(220, 220, 220), 1, true),
-                new EmptyBorder(25, 40, 25, 40)
-        ));
+        pnlContenedor.setBorder(new EmptyBorder(40, 30, 40, 30));
 
-        JLabel lblAvatar = new JLabel("👤");
-        lblAvatar.setFont(new Font("Segoe UI", Font.PLAIN, 60));
+        JLabel lblAvatar = new JLabel();
+        lblAvatar.setIcon(crearAvatarCircular(voluntario.getNombres_completos(), 80, COLOR_PRIMARIO));
         lblAvatar.setAlignmentX(Component.CENTER_ALIGNMENT);
-        lblAvatar.setForeground(COLOR_PRIMARIO);
+        lblAvatar.setBorder(new EmptyBorder(0, 0, 10, 0));
 
         JLabel lblNombre = new JLabel(voluntario.getNombres_completos().toUpperCase());
-        lblNombre.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        lblNombre.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblNombre.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         pnlContenedor.add(lblAvatar);
         pnlContenedor.add(lblNombre);
-        pnlContenedor.add(Box.createVerticalStrut(15));
+        pnlContenedor.add(Box.createVerticalStrut(20));
 
         pnlContenedor.add(crearFilaInfo("Cédula:", voluntario.getCedula()));
         pnlContenedor.add(crearFilaInfo("Correo:", voluntario.getCorreo()));
         pnlContenedor.add(crearFilaInfo("Teléfono:", voluntario.getTelefono()));
-        pnlContenedor.add(Box.createVerticalStrut(15));
+        pnlContenedor.add(Box.createVerticalStrut(20));
 
         JPanel pnlEspecial = new JPanel(new GridLayout(1, 2, 15, 0));
         pnlEspecial.setBackground(Color.WHITE);
-        pnlEspecial.setMaximumSize(new Dimension(550, 70));
+        pnlEspecial.setMaximumSize(new Dimension(Integer.MAX_VALUE, 85));
         pnlEspecial.add(crearBloqueInfo("Habilidades", voluntario.getHabilidades()));
         pnlEspecial.add(crearBloqueInfo("Disponibilidad", voluntario.getDisponibilidad_dias()));
         pnlContenedor.add(pnlEspecial);
-        
-        pnlContenedor.add(Box.createVerticalStrut(25));
+
+        pnlContenedor.add(Box.createVerticalStrut(30));
 
         JLabel lblTituloTabla = new JLabel("MIS INICIATIVAS");
-        lblTituloTabla.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblTituloTabla.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblTituloTabla.setForeground(COLOR_PRIMARIO);
-        lblTituloTabla.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblTituloTabla.setAlignmentX(Component.CENTER_ALIGNMENT);
         pnlContenedor.add(lblTituloTabla);
-        pnlContenedor.add(Box.createVerticalStrut(10));
+        pnlContenedor.add(Box.createVerticalStrut(15));
 
-        String[] columnas = {"Iniciativa", "Fecha", "Estado"};
-        
-        modeloTabla = new DefaultTableModel(columnas, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) { return false; }
-        };
+        pnlTarjetasContenedor = new JPanel();
+        pnlTarjetasContenedor.setLayout(new BoxLayout(pnlTarjetasContenedor, BoxLayout.Y_AXIS));
+        pnlTarjetasContenedor.setBackground(Color.WHITE);
 
-        JTable tabla = new JTable(modeloTabla);
-        configurarEstiloYAnchoTabla(tabla);
+        JScrollPane scrollTarjetas = new JScrollPane(pnlTarjetasContenedor);
+        scrollTarjetas.setPreferredSize(new Dimension(550, 200));
+        scrollTarjetas.setBorder(BorderFactory.createEmptyBorder());
+        scrollTarjetas.getVerticalScrollBar().setUnitIncrement(16);
 
-        JScrollPane scrollTabla = new JScrollPane(tabla);
-        scrollTabla.setPreferredSize(new Dimension(550, 140));
-        scrollTabla.setBorder(new LineBorder(new Color(230, 230, 230)));
-        
-        pnlContenedor.add(scrollTabla);
-        add(pnlContenedor);
+        pnlContenedor.add(scrollTarjetas);
+        add(pnlContenedor, BorderLayout.CENTER);
     }
 
     private JPanel crearFilaInfo(String titulo, String valor) {
         JPanel pnl = new JPanel(new FlowLayout(FlowLayout.LEFT));
         pnl.setBackground(Color.WHITE);
-        pnl.setMaximumSize(new Dimension(600, 30));
-        JLabel lblT = new JLabel("<html><b>" + titulo + "</b></html>");
-        lblT.setPreferredSize(new Dimension(90, 25));
+        pnl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+
+        JLabel lblT = new JLabel(titulo);
+        lblT.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblT.setForeground(new Color(80, 80, 80));
+        lblT.setPreferredSize(new Dimension(100, 25));
+
         JLabel lblV = new JLabel(valor);
+        lblV.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        lblV.setForeground(Color.BLACK);
+
         pnl.add(lblT);
         pnl.add(lblV);
         return pnl;
@@ -113,66 +103,108 @@ public class FrmPerfilVoluntario extends JPanel{
         String texto = (valor == null || valor.isEmpty()) ? "No registrado" : valor;
         JPanel pnl = new JPanel();
         pnl.setLayout(new BoxLayout(pnl, BoxLayout.Y_AXIS));
-        pnl.setBackground(new Color(242, 248, 245)); // Verde muy claro
-        pnl.setBorder(new EmptyBorder(8, 10, 8, 10));
+        pnl.setBackground(new Color(242, 248, 245));
+        pnl.setBorder(new EmptyBorder(12, 15, 12, 15));
 
         JLabel lblT = new JLabel(titulo.toUpperCase());
-        lblT.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        lblT.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblT.setForeground(COLOR_PRIMARIO);
 
-        JLabel lblV = new JLabel("<html><body style='width: 150px'>" + texto + "</body></html>");
-        lblV.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        JLabel lblV = new JLabel("<html><body style='width: 180px'>" + texto + "</body></html>");
+        lblV.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
         pnl.add(lblT);
-        pnl.add(Box.createVerticalStrut(3));
+        pnl.add(Box.createVerticalStrut(5));
         pnl.add(lblV);
         return pnl;
     }
-    
+
     public void cargarIniciativas() {
-        if (modeloTabla == null) return;
-        
-        modeloTabla.setRowCount(0); 
-        
+        if (pnlTarjetasContenedor == null) return;
+        pnlTarjetasContenedor.removeAll();
+
         try {
             ParticipacionDAO dao = new ParticipacionDAO();
             List<Participacion> lista = dao.listarPorVoluntario(voluntario.getId_voluntario());
-            for (Participacion p : lista) {
-                modeloTabla.addRow(new Object[]{
-                    p.getNombreIniciativa(), 
-                    p.getFechaIniciativa(), 
-                    p.getEstado().toUpperCase()
-                });
+
+            if (lista.isEmpty()) {
+                JLabel lblVacio = new JLabel("Aún no tienes iniciativas registradas.");
+                lblVacio.setAlignmentX(Component.CENTER_ALIGNMENT);
+                lblVacio.setForeground(Color.GRAY);
+                pnlTarjetasContenedor.add(lblVacio);
+            } else {
+                for (Participacion p : lista) {
+                    pnlTarjetasContenedor.add(crearTarjetaIniciativa(
+                        p.getNombreIniciativa(), p.getFechaIniciativa().toString(), p.getEstado()));
+                    pnlTarjetasContenedor.add(Box.createVerticalStrut(10));
+                }
             }
         } catch (Exception e) {
-            System.err.println("Error al cargar datos: " + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
         }
+        pnlTarjetasContenedor.revalidate();
+        pnlTarjetasContenedor.repaint();
     }
-    
-    private void configurarEstiloYAnchoTabla(JTable tabla) {
-        tabla.setRowHeight(30);
-        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tabla.setSelectionBackground(new Color(230, 245, 235));
-        tabla.setSelectionForeground(Color.BLACK);
-        tabla.setGridColor(new Color(240, 240, 240));
-        tabla.setShowVerticalLines(false);
 
-        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        tabla.getTableHeader().setBackground(COLOR_PRIMARIO);
-        tabla.getTableHeader().setForeground(Color.WHITE);
-        tabla.getTableHeader().setReorderingAllowed(false); // Para que no muevan las columnas
+    private JPanel crearTarjetaIniciativa(String nombre, String fecha, String estado) {
+        JPanel tarjeta = new JPanel();
+        tarjeta.setLayout(new BorderLayout(10, 5));
+        tarjeta.setBackground(new Color(250, 252, 250));
+        tarjeta.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(new Color(220, 225, 220), 1, true),
+                new EmptyBorder(12, 18, 12, 18)
+        ));
+        tarjeta.setMaximumSize(new Dimension(Integer.MAX_VALUE, 75));
 
-        TableColumnModel columnModel = tabla.getColumnModel();
-        
-        columnModel.getColumn(0).setPreferredWidth(300); 
-        
-        columnModel.getColumn(1).setPreferredWidth(100);
-        
-        columnModel.getColumn(2).setPreferredWidth(100);
+        JPanel pnlInfo = new JPanel();
+        pnlInfo.setLayout(new BoxLayout(pnlInfo, BoxLayout.Y_AXIS));
+        pnlInfo.setBackground(tarjeta.getBackground());
 
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        columnModel.getColumn(1).setCellRenderer(centerRenderer);
-        columnModel.getColumn(2).setCellRenderer(centerRenderer);
+        JLabel lblNombre = new JLabel(nombre);
+        lblNombre.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblNombre.setForeground(COLOR_PRIMARIO);
+
+        JLabel lblFecha = new JLabel("Fecha programada: " + fecha);
+        lblFecha.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblFecha.setForeground(Color.GRAY);
+
+        pnlInfo.add(lblNombre);
+        pnlInfo.add(Box.createVerticalStrut(4));
+        pnlInfo.add(lblFecha);
+
+        JLabel lblEstado = new JLabel("  " + estado.toUpperCase() + "  ");
+        lblEstado.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        if (estado.equalsIgnoreCase("PENDIENTE") || estado.equalsIgnoreCase("EN PROCESO")) {
+            lblEstado.setForeground(new Color(210, 130, 0));
+        } else {
+            lblEstado.setForeground(COLOR_PRIMARIO);
+        }
+        lblEstado.setBorder(new LineBorder(lblEstado.getForeground(), 1, true));
+
+        tarjeta.add(pnlInfo, BorderLayout.CENTER);
+        tarjeta.add(lblEstado, BorderLayout.EAST);
+        return tarjeta;
+    }
+
+    private Icon crearAvatarCircular(String nombreCompleto, int tamaño, Color colorFondo) {
+        return new Icon() {
+            @Override
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(colorFondo);
+                g2.fillOval(x, y, tamaño, tamaño);
+                String inicial = (nombreCompleto != null && !nombreCompleto.isEmpty()) ? nombreCompleto.substring(0, 1).toUpperCase() : "?";
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, tamaño / 2));
+                FontMetrics fm = g2.getFontMetrics();
+                int txtX = x + (tamaño - fm.stringWidth(inicial)) / 2;
+                int txtY = y + ((tamaño - fm.getHeight()) / 2) + fm.getAscent();
+                g2.drawString(inicial, txtX, txtY);
+                g2.dispose();
+            }
+            @Override public int getIconWidth() { return tamaño; }
+            @Override public int getIconHeight() { return tamaño; }
+        };
     }
 }

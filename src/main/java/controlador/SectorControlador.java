@@ -4,17 +4,6 @@
  */
 package controlador;
 
-/**
- * Controlador principal del módulo de Sectores.
- * Es el "director de orquesta" que escucha los eventos de la interfaz gráfica (Vista)
- * y delega las operaciones de guardado, eliminación y búsqueda a la capa de Servicio.
- * Además, gestiona la generación de reportes en PDF.
- * Proyecto: Sistema de Gestión Ambiental (EcoVida)
- * 
- * @author Gabriela Solange Gonzalez Roman
- * @version 1.0
- * @since 2026-05-05
- */
 
 import modelo.Sector;
 import vista.SectoresPnl;
@@ -35,6 +24,17 @@ import com.itextpdf.text.pdf.PdfWriter;
 import javax.swing.JFileChooser;
 import java.io.FileOutputStream;
 
+/**
+ * Controlador principal del módulo de Sectores.
+ * Es el "director de orquesta" que escucha los eventos de la interfaz gráfica (Vista)
+ * y delega las operaciones de guardado, eliminación y búsqueda a la capa de Servicio.
+ * Además, gestiona la generación de reportes en PDF.
+ * Proyecto: Sistema de Gestión Ambiental (EcoVida)
+ * 
+ * @author Gabriela Solange Gonzalez Roman
+ * @version 1.0
+ * @since 2026-05-05
+ */
 public class SectorControlador {
 
     private final SectorService sectorService = new SectorService();
@@ -96,42 +96,71 @@ public class SectorControlador {
 
 /**
  * Valida los datos ingresados en el formulario de sectores.
- *
+ * 
  * @param nombre nombre de la zona o sector.
  * @param provincia provincia o ciudad del sector.
  * @param riesgo nivel de riesgo seleccionado.
  * @param estado estado actual de la zona.
  * @return una cadena con los mensajes de error encontrados, si no existen errores retorna una cadena vacía.
  */
-    public String validarDatosSector(String nombre, String provincia, String riesgo, String estado) {
-        String mensajeError = ""; 
+        public String validarDatosSector(String nombre, String provincia, String riesgo, String estado, String lat, String lon, String descripcion) {
+            StringBuilder errores = new StringBuilder(); 
 
-        if (nombre == null || nombre.trim().isEmpty()) {
-            
-            mensajeError += "- El nombre de la zona es obligatorio.\n";
-            
-        } else if (nombre.length() > 150) {
-            
-            mensajeError += "- El nombre excede los 150 caracteres permitidos.\n";
+            errores.append(validarNombre(nombre));
+            errores.append(validarProvincia(provincia));
+            errores.append(validarListas(riesgo, estado));
+            errores.append(validarDescripcion(descripcion));
+
+            errores.append(validarCoordenada(lat, "latitud", -90.0, 90.0));
+            errores.append(validarCoordenada(lon, "longitud", -180.0, 180.0));
+
+            return errores.toString();
         }
 
-        if (provincia == null || provincia.trim().isEmpty()) {
-            
-            mensajeError += "- La provincia/ciudad es obligatoria.\n";
+        private String validarNombre(String nombre) {
+            if (nombre == null || nombre.trim().isEmpty()) return "- El nombre de la zona es obligatorio.\n";
+            if (nombre.length() > 150) return "- El nombre excede los 150 caracteres.\n";
+            if (!nombre.matches("^[a-zA-Z0-9 áéíóúÁÉÍÓÚñÑ]+$")) return "- El nombre solo permite letras, números y espacios.\n";
+            return "";
         }
 
-        if (riesgo == null || riesgo.equals("Seleccionar...")) {
-            
-            mensajeError += "- Debe seleccionar un nivel de riesgo.\n";
+        private String validarProvincia(String provincia) {
+            if (provincia == null || provincia.trim().isEmpty()) return "- La provincia/ciudad es obligatoria.\n";
+            if (provincia.length() > 100) return "- La provincia excede los 100 caracteres.\n";
+            if (!provincia.matches("^[a-zA-Z áéíóúÁÉÍÓÚñÑ-]+$")) return "- La provincia solo permite letras, espacios y guiones.\n";
+            return "";
         }
 
-        if (estado == null || estado.equals("Seleccionar...")) {
-            
-            mensajeError += "- Debe seleccionar el estado de la zona.\n";
+        private String validarListas(String riesgo, String estado) {
+            StringBuilder error = new StringBuilder();
+            if (riesgo == null || "Seleccionar...".equals(riesgo)) error.append("- Debe seleccionar un nivel de riesgo.\n");
+            if (estado == null || "Seleccionar...".equals(estado)) error.append("- Debe seleccionar el estado de la zona.\n");
+            return error.toString();
         }
 
-        return mensajeError;
-    }
+        private String validarDescripcion(String descripcion) {
+            if (descripcion != null && descripcion.length() > 255) {
+                return "- La descripción excede los 255 caracteres permitidos.\n";
+            }
+            return "";
+        }
+
+        private String validarCoordenada(String valor, String tipo, double min, double max) {
+            if (valor == null || valor.trim().isEmpty()) return "- La " + tipo + " es obligatoria.\n";
+            if (valor.length() > 12) return "- La " + tipo + " no debe exceder los 12 caracteres.\n";
+
+            try {
+                double num = Double.parseDouble(valor.trim());
+                if (num < min || num > max) {
+                    // Convierte la primera letra a mayúscula para el mensaje (ej: "Latitud fuera de rango...")
+                    String tipoCapitalizado = tipo.substring(0, 1).toUpperCase() + tipo.substring(1);
+                    return "- " + tipoCapitalizado + " fuera de rango (" + min + " a " + max + ").\n";
+                }
+            } catch (NumberFormatException e) {
+                return "- La " + tipo + " debe ser un número válido.\n";
+            }
+            return "";
+        }
 
 /**
  * Valida los filtros ingresados para realizar la búsqueda de sectores.
@@ -145,26 +174,21 @@ public class SectorControlador {
 public boolean validarFiltrosBusqueda(String textoBusqueda, String riesgo, String estado) {
         
         if (textoBusqueda != null) {
+            
             if (textoBusqueda.length() > 50) {
+                
                 return false; 
             }
             if (!textoBusqueda.isBlank()) {
+                
                 return true; 
             }
         }
 
-        if (!"Seleccionar...".equals(riesgo)) {
-            return true;
-        }
+       return !"Seleccionar...".equals(riesgo) || !"Seleccionar...".equals(estado);
 
-        if (!"Seleccionar...".equals(estado)) {
-            return true;
-        }
-
-        return false;
     }
-
-    
+ 
 /**
  * Guarda un sector en la base de datos.
  * <p>
@@ -181,7 +205,10 @@ public boolean validarFiltrosBusqueda(String textoBusqueda, String riesgo, Strin
                 sector.getNombreZona(), 
                 sector.getProvinciaCiudad(), 
                 sector.getNivelRiesgo(), 
-                sector.getEstadoZona()
+                sector.getEstadoZona(),
+                sector.getLatitud(),
+                sector.getLongitud(),
+                sector.getDescripcionTerreno()
             );
 
             if (!errores.isEmpty()) {
@@ -239,31 +266,31 @@ public boolean validarFiltrosBusqueda(String textoBusqueda, String riesgo, Strin
  */
 
     private void eliminar() {
-        try {
-            Sector sector = panel.getSectorDelFormulario();
-            if (sector.getIdSector() == 0) {
-                panel.mostrarError("Seleccione un sector de la tabla para eliminar.");
-                return;
-            }
-
-            int confirmacion = javax.swing.JOptionPane.showConfirmDialog(panel, 
-                    "¿Está seguro de eliminar el sector '" + sector.getNombreZona() + "'?", 
-                    "Confirmar Eliminación", 
-                    javax.swing.JOptionPane.YES_NO_OPTION);
-
-            if (confirmacion == javax.swing.JOptionPane.YES_OPTION) {
-                sectorService.eliminarSector(sector.getIdSector());
-                panel.mostrarMensaje("Sector eliminado correctamente.");
-                panel.limpiarFormulario();
-                cargarTabla();
-            }
-
-        } catch (IllegalArgumentException e) {
-            panel.mostrarError(e.getMessage());
-        } catch (SQLException e) {
-            panel.mostrarError("No se puede eliminar: " + e.getMessage());
+    try {
+        Sector sector = panel.getSectorDelFormulario();
+        if (sector.getIdSector() == 0) {
+            panel.mostrarError("Seleccione un sector de la tabla para eliminar.");
+            return;
         }
+
+        int confirmacion = javax.swing.JOptionPane.showConfirmDialog(panel, 
+                "¿Está seguro de que desea eliminar este sector? Esta acción no se puede deshacer", 
+                "Confirmar Eliminación", 
+                javax.swing.JOptionPane.YES_NO_OPTION);
+
+        if (confirmacion == javax.swing.JOptionPane.YES_OPTION) {
+            sectorService.eliminarSector(sector.getIdSector());
+            panel.mostrarMensaje("Sector eliminado exitosamente");
+            panel.limpiarFormulario();
+            cargarTabla();
+        }
+
+    } catch (IllegalArgumentException e) {
+        panel.mostrarError(e.getMessage());
+    } catch (SQLException e) {
+        panel.mostrarError("No se puede eliminar: " + e.getMessage());
     }
+}
     
     
   /**
@@ -290,7 +317,7 @@ public boolean validarFiltrosBusqueda(String textoBusqueda, String riesgo, Strin
             java.io.File archivoGuardar = fileChooser.getSelectedFile();
             String rutaDestino = archivoGuardar.getAbsolutePath();
             
-            if (!rutaDestino.toLowerCase().endsWith(".pdf")) {
+            if (!rutaDestino.toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")) {
                 rutaDestino += ".pdf";
             }
 

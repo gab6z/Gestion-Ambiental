@@ -2,8 +2,6 @@ package controlador;
 
 import dao.GestionAmbientalDAO;
 import modelo.Iniciativa;
-import modelo.Sector;
-import modelo.Tarea;
 import vista.IniciativaPnl;
 import service.IniciativaService;
 import service.SectorService;
@@ -17,7 +15,9 @@ import modelo.Voluntario;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 import java.io.FileOutputStream;
+import java.sql.Date;
 import javax.swing.JFileChooser;
+import modelo.Sector;
 
 /**
  * Controlador para el módulo de Iniciativa (Planificación Ambiental) del
@@ -31,7 +31,6 @@ import javax.swing.JFileChooser;
  * @version 1.2
  */
 public class IniciativaControlador {
-
     private final IniciativaService iniciativaService = new IniciativaService();
     private final SectorService sectorService = new SectorService();
     private final TareaService tareaService = new TareaService();
@@ -41,18 +40,31 @@ public class IniciativaControlador {
     private List<Iniciativa> iniciativasActuales;
     
     /**
-     * Constructor del controlador que asocia la vista y arranca los componentes
-     * de datos. Enlaza los escuchadores de eventos y rellena los componentes
-     * interactivos de la UI.
+     * Constructor original del sistema, inicializa UI y BD.
      *
-     * * @param panel El panel de la interfaz gráfica (UI) que se va a
-     * controlar.
+     * @param panel El panel de la interfaz gráfica.
      */
     public IniciativaControlador(IniciativaPnl panel) {
         this.panel = panel;
         iniciarEventos();
-        cargarCombos(); 
+        cargarCombos();
         cargarTabla();
+    }
+
+    /**
+     * Constructor alternativo para pruebas unitarias. Omite la inicialización
+     * de UI y BD cuando modoTest es true.
+     *
+     * @param panel El panel de la UI, puede ser null en contexto de testing.
+     * @param modoTest Si es true, omite la inicialización de UI y BD.
+     */
+    public IniciativaControlador(IniciativaPnl panel, boolean modoTest) {
+        this.panel = panel;
+        if (!modoTest) {
+            iniciarEventos();
+            cargarCombos();
+            cargarTabla();
+        }
     }
     
     /**
@@ -66,6 +78,11 @@ public class IniciativaControlador {
         panel.getBtnLimpiar().addActionListener(e -> panel.limpiarFormulario());
         panel.getBtnEliminar().addActionListener(e -> eliminar());
         panel.getBtnPDF().addActionListener(e -> generarReportePDF());
+        panel.getBtnFiltrar().addActionListener(e -> aplicarFiltros());
+        panel.getBtnLimpiarFiltro().addActionListener(e -> {
+            panel.limpiarFiltros();
+            panel.cargarDatosTabla(iniciativasActuales);
+        });
         
         panel.addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override
@@ -111,6 +128,8 @@ public class IniciativaControlador {
 
             dao.VoluntarioDAO voluntarioDAO = new dao.VoluntarioDAO();
             panel.cargarListaVoluntarios(voluntarioDAO.listar());
+            
+            panel.cargarListaFiltroSectores(sectorService.listarSectores());
 
         } catch (SQLException e) {
             panel.mostrarError("Error al cargar datos: " + e.getMessage());
@@ -137,8 +156,9 @@ public class IniciativaControlador {
      * vinculados.
      */
     private void guardar() {
-        try {
+        try {            
             Iniciativa ini = panel.getIniciativaDelFormulario();
+            validarCamposObligatorios(ini); 
             validarFechasYTiempos(ini);
             validarPresupuestoYLogistica(ini);
             int idReal;
@@ -213,7 +233,7 @@ public class IniciativaControlador {
      * @throws IllegalArgumentException Si la fecha de fin es anterior a la de
      * ejecución, o si las horas se solapan de manera ilógica.
      */
-    private void validarFechasYTiempos(Iniciativa ini) throws IllegalArgumentException {
+    public void validarFechasYTiempos(Iniciativa ini) throws IllegalArgumentException {
         if (ini.getFechaFin() != null && ini.getFechaEjecucion() != null) {
             if (ini.getFechaFin().before(ini.getFechaEjecucion())) {
                 throw new IllegalArgumentException("La fecha de finalización no puede ser anterior a la de ejecución.");
@@ -237,19 +257,177 @@ public class IniciativaControlador {
      * son menores o iguales a cero, o si la descripción excede los 500
      * caracteres de persistencia.
      */
-    private void validarPresupuestoYLogistica(Iniciativa ini) throws IllegalArgumentException {
+    public void validarPresupuestoYLogistica(Iniciativa ini) throws IllegalArgumentException {
         if (ini.getPresupuesto() <= 0) {
             throw new IllegalArgumentException("El presupuesto debe ser una cantidad mayor a 0.");
         }
 
         if (ini.getMeta() <= 0) {
-            throw new IllegalArgumentException("Debe asignar una meta cuantitativa válida.");
+            throw new IllegalArgumentException("Debe asignar una cantidad de participantes mayor a 0.");
         }
+        
+        if (ini.getMeta() >= 5000){
+            throw new IllegalArgumentException("Debe asignar una cantidad de participantes menor a 5000.");
+        }
+        
         if (ini.getDescripcion() != null && ini.getDescripcion().length() > 500) {
             throw new IllegalArgumentException("La descripción logística excede el límite de 500 caracteres.");
         }
     }
     
+    /**
+     * Valida que los campos obligatorios del formulario no estén vacíos y que
+     * los datos numéricos tengan el formato correcto.
+     *
+     * @param ini El objeto iniciativa mapeado desde el formulario.
+     * @throws IllegalArgumentException Si algún campo obligatorio está vacío o
+     * contiene un valor inválido.
+     */
+    public void validarCamposObligatorios(Iniciativa ini) throws IllegalArgumentException {
+
+        if (ini.getTitulo() == null || ini.getTitulo().trim().isEmpty()) {
+            throw new IllegalArgumentException("El título de la iniciativa es obligatorio.");
+        }
+        
+        if (ini.getTitulo().trim().length() < 3) {
+            throw new IllegalArgumentException("El título debe tener al menos 3 caracteres.");
+        }
+        
+        if (ini.getTitulo().trim().length() > 50) {
+            throw new IllegalArgumentException("El título no puede superar los 50 caracteres.");
+        }
+
+        if (ini.getIdSector() <= 0) {
+            throw new IllegalArgumentException("Debe seleccionar un sector.");
+        }
+
+        if (ini.getIdTarea() <= 0) {
+            throw new IllegalArgumentException("Debe seleccionar una tarea ambiental.");
+        }
+
+        if (ini.getIdGestion() <= 0) {
+            throw new IllegalArgumentException("Debe seleccionar una entidad de gestión.");
+        }
+
+        if (ini.getFechaEjecucion() == null) {
+            throw new IllegalArgumentException("La fecha de ejecución es obligatoria.");
+        }
+
+        if (ini.getIdSector() > 0) { // solo si hay sector válido
+            List<Voluntario> seleccionados = panel.getVoluntariosSeleccionados();
+            if (seleccionados == null || seleccionados.isEmpty()) {
+                throw new IllegalArgumentException("Debe asignar al menos un voluntario.");
+            }
+        }
+    }
+    
+    /**
+     * Aplica los filtros seleccionados (rango de fechas, sectores y estado)
+     * sobre la lista local de iniciativas y actualiza la tabla con los
+     * resultados. El filtrado es local (sin nueva consulta a BD) para
+     * garantizar rapidez de respuesta.
+     */
+    private void aplicarFiltros() {
+    if (iniciativasActuales == null || iniciativasActuales.isEmpty()) {
+        panel.mostrarError("No hay datos para filtrar.");
+        return;
+    }
+
+    Date desde = panel.getFiltroDesde();
+    Date hasta = panel.getFiltroHasta();
+    Sector sectorSeleccionado = panel.getSectorFiltroSeleccionado(); // Cambio aquí: obtiene un solo sector
+    String estado = panel.getFiltroEstado();
+
+    if (desde != null && hasta != null && desde.after(hasta)) {
+        panel.mostrarError("La fecha 'Desde' no puede ser posterior a la fecha 'Hasta'.");
+        return;
+    }
+
+    List<Iniciativa> resultado = iniciativasActuales.stream()
+            .filter(ini -> filtrarPorFecha(ini, desde, hasta))
+            .filter(ini -> filtrarPorSectorUnico(ini, sectorSeleccionado)) // Cambio aquí: usa filtro de sector único
+            .filter(ini -> filtrarPorEstado(ini, estado))
+            .toList();
+
+    if (resultado.isEmpty()) {
+        panel.mostrarError("No se encontraron iniciativas con los filtros aplicados.");
+        panel.cargarDatosTabla(resultado);
+    } else {
+        panel.cargarDatosTabla(resultado);
+    }
+}
+
+    /**
+     * Evalúa si una iniciativa cae dentro del rango de fechas indicado. Si
+     * ambas fechas son nulas, no aplica restricción.
+     *
+     * @param ini Iniciativa a evaluar.
+     * @param desde Fecha mínima del rango (inclusive), puede ser null.
+     * @param hasta Fecha máxima del rango (inclusive), puede ser null.
+     * @return true si la iniciativa pasa el filtro de fecha.
+     */
+    private boolean filtrarPorFecha(Iniciativa ini, Date desde, Date hasta) {
+        Date fechaEj = ini.getFechaEjecucion();
+        if (fechaEj == null) {
+            return false;
+        }
+        if (desde != null && fechaEj.before(desde)) {
+            return false;
+        }
+        if (hasta != null && fechaEj.after(hasta)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Evalúa si una iniciativa pertenece a alguno de los sectores
+     * seleccionados. Si la lista está vacía, no aplica restricción.
+     *
+     * @param ini Iniciativa a evaluar.
+     * @param sectoresSel Lista de sectores seleccionados en el filtro.
+     * @return true si la iniciativa pasa el filtro de sector.
+     */
+    private boolean filtrarPorSector(Iniciativa ini, List<Sector> sectoresSel) {
+        if (sectoresSel == null || sectoresSel.isEmpty()) {
+            return true;
+        }
+        return sectoresSel.stream()
+                .anyMatch(s -> s.getIdSector() == ini.getIdSector());
+    }
+    
+
+
+    /**
+     * Evalúa si una iniciativa coincide con el estado seleccionado en el
+     * filtro. Si el estado es "Todos", no aplica restricción.
+     *
+     * @param ini Iniciativa a evaluar.
+     * @param estado Estado seleccionado en el combo de filtros.
+     * @return true si la iniciativa pasa el filtro de estado.
+     */
+    private boolean filtrarPorEstado(Iniciativa ini, String estado) {
+        if (estado == null || estado.equals("Todos")) {
+            return true;
+        }
+        return estado.equalsIgnoreCase(ini.getEstado());
+    }
+    
+     /**
+     * Evalúa si una iniciativa pertenece al sector seleccionado.
+     * Si el sector es null (representa "Todos"), no aplica restricción.
+     *
+     * @param ini Iniciativa a evaluar.
+     * @param sector Sector seleccionado en el filtro (puede ser null).
+     * @return true si la iniciativa pasa el filtro de sector.
+     */
+    private boolean filtrarPorSectorUnico(Iniciativa ini, Sector sector) {
+        if (sector == null) {
+            return true; // "Todos" seleccionado
+        }
+        return sector.getIdSector() == ini.getIdSector();
+    }
+ 
     /**
      * Genera y exporta dinámicamente un documento formal en formato PDF (A4 en
      * orientación apaisada) conteniendo los registros completos almacenados en
@@ -270,7 +448,7 @@ public class IniciativaControlador {
                 ruta += ".pdf";
             }
 
-            Document documento = new Document(PageSize.A4.rotate()); // Horizontal para que quepa la tabla
+            Document documento = new Document(PageSize.A4.rotate());
             try {
                 PdfWriter.getInstance(documento, new FileOutputStream(ruta));
                 documento.open();

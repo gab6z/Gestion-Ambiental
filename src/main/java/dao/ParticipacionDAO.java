@@ -6,6 +6,7 @@ package dao;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import modelo.Participacion;
 import utilidades.ConexionDB;
 /**
@@ -45,6 +46,20 @@ public class ParticipacionDAO {
             }
         }
     }
+    
+    public java.util.Map<Integer, String> obtenerEstadosPorIniciativa(int idIniciativa) throws SQLException {
+    java.util.Map<Integer, String> estados = new java.util.HashMap<>();
+    String sql = "SELECT id_voluntario, estado FROM PARTICIPACION WHERE id_iniciativa = ?";
+    
+    try (Connection cn = ConexionDB.getConnection(); PreparedStatement ps = cn.prepareStatement(sql)) {
+        ps.setInt(1, idIniciativa);
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            estados.put(rs.getInt("id_voluntario"), rs.getString("estado"));
+        }
+    }
+    return estados;
+}
 
     public List<Participacion> listarPorVoluntario(int idVoluntario) throws SQLException {
         List<Participacion> lista = new ArrayList<>();
@@ -70,5 +85,48 @@ public class ParticipacionDAO {
             }
         }
         return lista;
+    }
+    
+    /**
+     * Consulta la tabla intermedia PARTICIPACION y devuelve un diccionario
+     * con los IDs de las iniciativas y el estado actual del voluntario.
+     */
+    public Map<Integer, String> obtenerEstadosPorVoluntario(int idVoluntario) throws SQLException {
+        Map<Integer, String> estados = new java.util.HashMap<>();
+        
+        String sql = "SELECT id_iniciativa, estado FROM participacion WHERE id_voluntario = ?";
+        
+        try (java.sql.Connection cn = utilidades.ConexionDB.getConnection();
+             java.sql.PreparedStatement ps = cn.prepareStatement(sql)) {
+             
+            ps.setInt(1, idVoluntario);
+            
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    estados.put(rs.getInt("id_iniciativa"), rs.getString("estado"));
+                }
+            }
+        }
+        return estados;
+    }
+    
+    public void actualizarEstado(int idIniciativa, int idVoluntario, String nuevoEstado) throws SQLException {
+        String sql = "UPDATE PARTICIPACION SET estado = ? WHERE id_iniciativa = ? AND id_voluntario = ?";
+
+        try (Connection cn = ConexionDB.getConnection(); 
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setString(1, nuevoEstado);
+            ps.setInt(2, idIniciativa);
+            ps.setInt(3, idVoluntario);
+
+            int filasAfectadas = ps.executeUpdate();
+
+            if (filasAfectadas == 0) {
+                System.out.println("ADVERTENCIA: No se encontró ningún registro para actualizar con Iniciativa: " + idIniciativa + " y Voluntario: " + idVoluntario);
+            } else {
+                System.out.println("ÉXITO: Se actualizó el estado a " + nuevoEstado);
+            }
+        }
     }
 }
