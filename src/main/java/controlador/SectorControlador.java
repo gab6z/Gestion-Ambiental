@@ -24,38 +24,37 @@ import javax.swing.JFileChooser;
 import java.io.FileOutputStream;
 
 /**
- * Descripción: Controlador principal del módulo de Sectores.
- * Es el "director de orquesta" que escucha los eventos de la interfaz gráfica (Vista)
- * y delega las operaciones de guardado, eliminación y búsqueda a la capa de Servicio.
- * Además, gestiona la generación de reportes en PDF.
- * Proyecto: Sistema de Gestión Ambiental (EcoVida)
- * 
- * @author Gabriela Solange Gonzalez Roman
+ * Controlador principal del módulo de Sectores. Es el "director de orquesta"
+ * que escucha los eventos de la interfaz gráfica (Vista) y delega las
+ * operaciones de guardado, eliminación y búsqueda a la capa de Servicio.
+ * Además, gestiona la generación de reportes en PDF. Proyecto: Sistema de
+ * Gestión Ambiental (EcoVida)
+ *
+ * * @author Gabriela Solange Gonzalez Roman
  * @version 1.0
  * @since 2026-05-05
  */
-
 public class SectorControlador {
 
     private final SectorService sectorService = new SectorService();
     private final SectoresPnl panel;
     private List<Sector> sectoresActuales;
 
-    
-/**
- * Crea una nueva instancia del controlador de sectores.
- *
- * @param panel panel de la vista {@link SectoresPnl} asociado al controlador.
- */
+    /**
+     * Crea una nueva instancia del controlador de sectores.
+     *
+     * @param panel panel de la vista {@link SectoresPnl} asociado al
+     * controlador.
+     */
     public SectorControlador(SectoresPnl panel) {
         this.panel = panel;
         iniciarEventos();
         cargarTabla();
     }
 
-/**
- * Inicializa y registra todos los eventos de la interfaz gráfica.
- */
+    /**
+     * Inicializa y registra todos los eventos de la interfaz gráfica.
+     */
     private void iniciarEventos() {
         panel.getBtnGuardar().addActionListener(e -> guardar());
         panel.getBtnActualizar().addActionListener(e -> guardar());
@@ -77,13 +76,13 @@ public class SectorControlador {
         });
     }
 
-/**
- * Carga todos los sectores registrados en la base de datos
- * y los muestra en la tabla de la interfaz.
- *
- * @throws SQLException implícitamente manejada si ocurre un error
- * durante la consulta de datos.
- */
+    /**
+     * Carga todos los sectores registrados en la base de datos y los muestra en
+     * la tabla de la interfaz.
+     *
+     * @throws SQLException implícitamente manejada si ocurre un error durante
+     * la consulta de datos.
+     */
     private void cargarTabla() {
         try {
             sectoresActuales = sectorService.listarSectores();
@@ -93,44 +92,92 @@ public class SectorControlador {
         }
     }
 
+    /**
+     * Valida los datos ingresados en el formulario de sectores.
+     *
+     * * @param nombre nombre de la zona o sector.
+     * @param provincia provincia o ciudad del sector.
+     * @param riesgo nivel de riesgo seleccionado.
+     * @param estado estado actual de la zona.
+     * @return una cadena con los mensajes de error encontrados, si no existen
+     * errores retorna una cadena vacía.
+     */
+    public String validarDatosSector(String nombre, String provincia, String riesgo, String estado, String lat, String lon, String descripcion) {
+        StringBuilder errores = new StringBuilder();
 
-/**
- * Valida los datos ingresados en el formulario de sectores.
- *
- * @param nombre nombre de la zona o sector.
- * @param provincia provincia o ciudad del sector.
- * @param riesgo nivel de riesgo seleccionado.
- * @param estado estado actual de la zona.
- * @return una cadena con los mensajes de error encontrados, si no existen errores retorna una cadena vacía.
- */
-    public String validarDatosSector(String nombre, String provincia, String riesgo, String estado) {
-        String mensajeError = ""; 
+        errores.append(validarNombre(nombre));
+        errores.append(validarProvincia(provincia));
+        errores.append(validarListas(riesgo, estado));
+        errores.append(validarDescripcion(descripcion));
 
+        errores.append(validarCoordenada(lat, "latitud", -90.0, 90.0));
+        errores.append(validarCoordenada(lon, "longitud", -180.0, 180.0));
+
+        return errores.toString();
+    }
+
+    private String validarNombre(String nombre) {
         if (nombre == null || nombre.trim().isEmpty()) {
-            
-            mensajeError += "- El nombre de la zona es obligatorio.\n";
-            
-        } else if (nombre.length() > 150) {
-            
-            mensajeError += "- El nombre excede los 150 caracteres permitidos.\n";
+            return "- El nombre de la zona es obligatorio.\n";
         }
+        if (nombre.length() > 150) {
+            return "- El nombre excede los 150 caracteres.\n";
+        }
+        if (!nombre.matches("^[a-zA-Z0-9 áéíóúÁÉÍÓÚñÑ]+$")) {
+            return "- El nombre solo permite letras, números y espacios.\n";
+        }
+        return "";
+    }
 
+    private String validarProvincia(String provincia) {
         if (provincia == null || provincia.trim().isEmpty()) {
-            
-            mensajeError += "- La provincia/ciudad es obligatoria.\n";
+            return "- La provincia/ciudad es obligatoria.\n";
+        }
+        if (provincia.length() > 100) {
+            return "- La provincia excede los 100 caracteres.\n";
+        }
+        if (!provincia.matches("^[a-zA-Z áéíóúÁÉÍÓÚñÑ-]+$")) {
+            return "- La provincia solo permite letras, espacios y guiones.\n";
+        }
+        return "";
+    }
+
+    private String validarListas(String riesgo, String estado) {
+        StringBuilder error = new StringBuilder();
+        if (riesgo == null || "Seleccionar...".equals(riesgo)) {
+            error.append("- Debe seleccionar un nivel de riesgo.\n");
+        }
+        if (estado == null || "Seleccionar...".equals(estado)) {
+            error.append("- Debe seleccionar el estado de la zona.\n");
+        }
+        return error.toString();
+    }
+
+    private String validarDescripcion(String descripcion) {
+        if (descripcion != null && descripcion.length() > 255) {
+            return "- La descripción excede los 255 caracteres permitidos.\n";
+        }
+        return "";
+    }
+
+    private String validarCoordenada(String valor, String tipo, double min, double max) {
+        if (valor == null || valor.trim().isEmpty()) {
+            return "- La " + tipo + " es obligatoria.\n";
+        }
+        if (valor.length() > 12) {
+            return "- La " + tipo + " no debe exceder los 12 caracteres.\n";
         }
 
-        if (riesgo == null || riesgo.equals("Seleccionar...")) {
-            
-            mensajeError += "- Debe seleccionar un nivel de riesgo.\n";
+        try {
+            double num = Double.parseDouble(valor.trim());
+            if (num < min || num > max) {
+                String tipoCapitalizado = tipo.substring(0, 1).toUpperCase() + tipo.substring(1);
+                return "- " + tipoCapitalizado + " fuera de rango (" + min + " a " + max + ").\n";
+            }
+        } catch (NumberFormatException e) {
+            return "- La " + tipo + " debe ser un número válido.\n";
         }
-
-        if (estado == null || estado.equals("Seleccionar...")) {
-            
-            mensajeError += "- Debe seleccionar el estado de la zona.\n";
-        }
-
-        return mensajeError;
+        return "";
     }
 
     /**
@@ -139,46 +186,46 @@ public class SectorControlador {
      * @param textoBusqueda texto de búsqueda ingresado por el usuario.
      * @param riesgo filtro de nivel de riesgo seleccionado.
      * @param estado filtro de estado seleccionado.
-     * @return {@code true} si los filtros son válidos;
-     *         {@code false} si no se ingresó ningún criterio válido.
+     * @return {@code true} si los filtros son válidos; {@code false} si no se
+     * ingresó ningún criterio válido.
      */
     public boolean validarFiltrosBusqueda(String textoBusqueda, String riesgo, String estado) {
-        
-        if (textoBusqueda != null) {        
-            if (textoBusqueda.length() > 50) {               
-                return false; 
+        if (textoBusqueda != null) {
+            if (textoBusqueda.length() > 50) {
+                return false;
             }
-            if (!textoBusqueda.isBlank()) {            
-                return true; 
+            if (!textoBusqueda.isBlank()) {
+                return true;
             }
-        } if (!"Seleccionar...".equals(riesgo) || !"Seleccionar...".equals(estado) ) {
-            return true;
         }
-        return false;
+        return !"Seleccionar...".equals(riesgo) || !"Seleccionar...".equals(estado);
     }
-    
-/**
- * Guarda un sector en la base de datos.
- * <p>
- * Si el sector ya existe, actualiza su información;
- * de lo contrario, registra un nuevo sector.
- * También valida los datos antes de realizar la operación.
- * </p>
- */
+
+    /**
+     * Guarda un sector en la base de datos.
+     * <p>
+     * Si el sector ya existe, actualiza su información; de lo contrario,
+     * registra un nuevo sector. También valida los datos antes de realizar la
+     * operación.
+     * </p>
+     */
     private void guardar() {
         try {
             Sector sector = panel.getSectorDelFormulario();
-            
+
             String errores = validarDatosSector(
-                sector.getNombreZona(), 
-                sector.getProvinciaCiudad(), 
-                sector.getNivelRiesgo(), 
-                sector.getEstadoZona()
+                    sector.getNombreZona(),
+                    sector.getProvinciaCiudad(),
+                    sector.getNivelRiesgo(),
+                    sector.getEstadoZona(),
+                    sector.getLatitud(),
+                    sector.getLongitud(),
+                    sector.getDescripcionTerreno()
             );
 
             if (!errores.isEmpty()) {
                 panel.mostrarError("Corrija los siguientes errores:\n" + errores);
-                return; 
+                return;
             }
 
             sectorService.guardarSector(sector);
@@ -192,12 +239,11 @@ public class SectorControlador {
             panel.mostrarError(e.getMessage());
         }
     }
-    
-/**
- * Realiza una búsqueda de sectores aplicando filtros
- * de texto, riesgo y estado.
 
- */
+    /**
+     * Realiza una búsqueda de sectores aplicando filtros de texto, riesgo y
+     * estado.
+     */
     private void buscarConFiltros() {
         try {
             String texto = panel.getTxtBusqueda().getText();
@@ -210,9 +256,9 @@ public class SectorControlador {
             }
 
             sectoresActuales = sectorService.listarFiltrados(texto, riesgo, estado);
-            
+
             if (sectoresActuales.isEmpty()) {
-                panel.cargarDatosTabla(sectoresActuales); 
+                panel.cargarDatosTabla(sectoresActuales);
                 panel.mostrarMensaje("No se encontraron sectores bajo estos parámetros.");
             } else {
                 panel.cargarDatosTabla(sectoresActuales);
@@ -222,14 +268,12 @@ public class SectorControlador {
         }
     }
 
-    
-/**
- * Elimina el sector seleccionado en la tabla.
- * <p>
- * Solicita confirmación al usuario antes de realizar la eliminación.
- * </p>
- */
-
+    /**
+     * Elimina el sector seleccionado en la tabla.
+     * <p>
+     * Solicita confirmación al usuario antes de realizar la eliminación.
+     * </p>
+     */
     private void eliminar() {
         try {
             Sector sector = panel.getSectorDelFormulario();
@@ -238,14 +282,14 @@ public class SectorControlador {
                 return;
             }
 
-            int confirmacion = javax.swing.JOptionPane.showConfirmDialog(panel, 
-                    "¿Está seguro de eliminar el sector '" + sector.getNombreZona() + "'?", 
-                    "Confirmar Eliminación", 
+            int confirmacion = javax.swing.JOptionPane.showConfirmDialog(panel,
+                    "¿Está seguro de que desea eliminar este sector? Esta acción no se puede deshacer",
+                    "Confirmar Eliminación",
                     javax.swing.JOptionPane.YES_NO_OPTION);
 
             if (confirmacion == javax.swing.JOptionPane.YES_OPTION) {
                 sectorService.eliminarSector(sector.getIdSector());
-                panel.mostrarMensaje("Sector eliminado correctamente.");
+                panel.mostrarMensaje("Sector eliminado exitosamente");
                 panel.limpiarFormulario();
                 cargarTabla();
             }
@@ -256,16 +300,15 @@ public class SectorControlador {
             panel.mostrarError("No se puede eliminar: " + e.getMessage());
         }
     }
-    
-    
-  /**
- * Genera un reporte en formato PDF con la información
- * de los sectores mostrados actualmente en la tabla.
- * <p>
- * El reporte incluye los filtros aplicados y los datos
- * principales de cada sector.
- * </p>
- */
+
+    /**
+     * Genera un reporte en formato PDF con la información de los sectores
+     * mostrados actualmente en la tabla.
+     * <p>
+     * El reporte incluye los filtros aplicados y los datos principales de cada
+     * sector.
+     * </p>
+     */
     private void exportarAPDF() {
         if (sectoresActuales == null || sectoresActuales.isEmpty()) {
             panel.mostrarError("No hay datos en la tabla para exportar.");
@@ -281,12 +324,12 @@ public class SectorControlador {
         if (userSelection == JFileChooser.APPROVE_OPTION) {
             java.io.File archivoGuardar = fileChooser.getSelectedFile();
             String rutaDestino = archivoGuardar.getAbsolutePath();
-            
-            if (!rutaDestino.toLowerCase().endsWith(".pdf")) {
+
+            if (!rutaDestino.toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")) {
                 rutaDestino += ".pdf";
             }
 
-            Document documento = new Document() {};
+            Document documento = new Document();
             try {
                 PdfWriter.getInstance(documento, new FileOutputStream(rutaDestino));
                 documento.open();
@@ -305,7 +348,7 @@ public class SectorControlador {
 
                 PdfPTable tablaPDF = new PdfPTable(4);
                 tablaPDF.setWidthPercentage(100);
-                tablaPDF.setWidths(new float[]{1f, 1.5f, 1f, 1f}); 
+                tablaPDF.setWidths(new float[]{1f, 1.5f, 1f, 1f});
 
                 tablaPDF.addCell(new Paragraph("Zona", FontFactory.getFont(FontFactory.HELVETICA_BOLD)));
                 tablaPDF.addCell(new Paragraph("Provincia / Ciudad", FontFactory.getFont(FontFactory.HELVETICA_BOLD)));

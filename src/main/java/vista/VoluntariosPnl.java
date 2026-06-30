@@ -47,18 +47,15 @@ public class VoluntariosPnl extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         setBackground(new Color(245, 247, 250));
 
-        // --- TITULO ---
-        JLabel lblTitulo = new JLabel("Gestión de Voluntarios - EcoVida");
+        JLabel lblTitulo = new JLabel("Gestión de Voluntarios");
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblTitulo.setForeground(new Color(23, 93, 62));
         add(lblTitulo, BorderLayout.NORTH);
 
-        // --- PANEL IZQUIERDO (FORMULARIO) ---
         JPanel panelIzq = new JPanel(new BorderLayout());
         panelIzq.setBackground(Color.WHITE);
         panelIzq.setPreferredSize(new Dimension(350, 0));
         
-        // Panel para los campos
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBackground(Color.WHITE);
         GridBagConstraints gbc = new GridBagConstraints();
@@ -114,7 +111,6 @@ public class VoluntariosPnl extends JPanel {
         panelIzq.add(panelBotones, BorderLayout.SOUTH);
         add(panelIzq, BorderLayout.WEST);
 
-        // --- PANEL DERECHO (TABLA Y BÚSQUEDA) ---
         JPanel panelDer = new JPanel(new BorderLayout(0, 10));
         panelDer.setBackground(Color.WHITE);
 

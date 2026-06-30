@@ -28,7 +28,7 @@ public class FrmRegistroVoluntario extends JFrame {
     }
 
     private void iniciarComponentes() {
-        setTitle("EcoVida - Registro de Nuevo Voluntario");
+        setTitle("Registro de Nuevo Voluntario");
         setSize(500, 700); // Lo hice un poquito más alto para que entre la contraseña
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);

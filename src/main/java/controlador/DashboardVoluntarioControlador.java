@@ -1,48 +1,64 @@
 package controlador;
 
-import java.sql.SQLException;
-import java.util.List;
-import javax.swing.JOptionPane;
+import dao.IniciativaDAO;
+import dao.ParticipacionDAO;
 import modelo.Iniciativa;
 import modelo.Voluntario;
 import vista.DashboardVoluntarioPnl;
 
-/**
- * Controlador para el Dashboard del Voluntario en el sistema EcoVida. Se
- * encarga de coordinar el flujo de datos entre el modelo de persistencia (DAO)
- * y la interfaz gráfica que renderiza las tarjetas de iniciativas ambientales.
- * * Interconecta la lógica de negocio con la vista según la arquitectura MVC.
- *
- * * @author Solis Caballero Geovanny Andrés
- * @version 1.0
- */
+import javax.swing.JOptionPane;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 public class DashboardVoluntarioControlador {
-    private DashboardVoluntarioPnl vista;
-    private Voluntario voluntario;
-    private dao.IniciativaDAO dao = new dao.IniciativaDAO();
 
-    public DashboardVoluntarioControlador(DashboardVoluntarioPnl vista, Voluntario voluntario) {
-        this.vista = vista;
-        this.voluntario = voluntario;
-        cargarDatos();
+    private DashboardVoluntarioPnl panel;
+    private Voluntario voluntarioActual;
+    private IniciativaDAO iniDao;
+    private ParticipacionDAO partDao;
+
+    public DashboardVoluntarioControlador(DashboardVoluntarioPnl panel, Voluntario voluntario) {
+        this.panel = panel;
+        this.voluntarioActual = voluntario;
+        this.iniDao = new IniciativaDAO();
+        this.partDao = new ParticipacionDAO();
+        
+        cargarDashboard();
     }
-    
-    /**
-     * Recupera la información de la base de datos y actualiza la interfaz
-     * gráfica. Consulta todas las iniciativas disponibles y contrasta cuáles
-     * pertenecen al voluntario logueado para enviarle la información
-     * consolidada al método de renderizado de la vista. * Muestra una alerta
-     * gráfica si ocurre un fallo en la capa de persistencia SQL.
-     */
-    private void cargarDatos() {
+
+    public void cargarDashboard() {
         try {
-            List<Iniciativa> todas = dao.listarTodas();
-            List<Integer> misIds = dao.obtenerMisIniciativas(voluntario.getId_voluntario());
-            vista.cargarCards(todas, misIds);
+            List<Iniciativa> listaIniciativas = iniDao.listarTodas();
+            Map<Integer, String> misEstados = partDao.obtenerEstadosPorVoluntario(voluntarioActual.getId_voluntario());
             
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(null, "Error al cargar dashboard: " + e.getMessage());
+            panel.cargarCards(listaIniciativas, misEstados, this);
+            
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(panel, "Error al cargar la base de datos: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    public void postularAIniciativa(int idIniciativa, String tituloIniciativa) {
+        int confirmar = JOptionPane.showConfirmDialog(panel, 
+            "¿Confirmas tu postulación para la iniciativa:\n'" + tituloIniciativa + "'?", 
+            "Confirmar Inscripción", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+
+        if (confirmar == JOptionPane.YES_OPTION) {
+            try {
+                boolean exito = partDao.registrarParticipacion(voluntarioActual.getId_voluntario(), idIniciativa);
+                
+                if (exito) {
+                    JOptionPane.showMessageDialog(panel, "¡Inscripción registrada con éxito!", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                    cargarDashboard(); 
+                } else {
+                    JOptionPane.showMessageDialog(panel, "Ya te encuentras inscrito en esta iniciativa.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(panel, "Error técnico: " + e.getMessage());
+            }
+        }
+    }
+    
+    
 }

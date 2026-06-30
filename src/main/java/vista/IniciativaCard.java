@@ -1,70 +1,93 @@
 package vista;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import modelo.Iniciativa;
-
-/**
- *
- * @author Usuario
- */
-
+import controlador.DashboardVoluntarioControlador;
 
 public class IniciativaCard extends JPanel {
 
-    public IniciativaCard(Iniciativa ini, boolean asignado) {
-        setLayout(new BorderLayout(10, 10));
-        setPreferredSize(new Dimension(300, 200));
+    private Iniciativa iniciativa;
+    private String estadoParticipacion;
+    private DashboardVoluntarioControlador controlador; 
+    private final Color VERDE_ECO = new Color(23, 93, 62);
 
-        Color colorFondo = asignado ? new Color(232, 245, 233) : Color.WHITE;
-        Color colorBorde = asignado ? new Color(76, 175, 80) : new Color(200, 200, 200);
-
-        setBackground(colorFondo);
-        setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(colorBorde, asignado ? 2 : 1),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-
-        // --- TÍTULO (JTextArea para multilínea sin HTML) ---
-        JTextArea txtTitulo = new JTextArea(ini.getTitulo());
-        txtTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        txtTitulo.setWrapStyleWord(true);
-        txtTitulo.setLineWrap(true);
-        txtTitulo.setEditable(false);
-        txtTitulo.setFocusable(false);
-        txtTitulo.setOpaque(false);
-        add(txtTitulo, BorderLayout.NORTH);
-
+    public IniciativaCard(Iniciativa iniciativa, String estadoParticipacion, DashboardVoluntarioControlador controlador) {
+        this.iniciativa = iniciativa;
+        this.estadoParticipacion = estadoParticipacion;
+        this.controlador = controlador; 
         
-        JPanel pnlDetalles = new JPanel();
-        pnlDetalles.setLayout(new BoxLayout(pnlDetalles, BoxLayout.Y_AXIS));
-        pnlDetalles.setOpaque(false);
-
-        pnlDetalles.add(crearDatoLabel("Sector: ", ini.getNombreSector()));
-        pnlDetalles.add(crearDatoLabel("Tarea: ", ini.getNombreTarea()));
-        pnlDetalles.add(Box.createVerticalStrut(5));
-
-        String cupos = "Participantes: " + ini.getTotalParticipantes() + " / " + ini.getMeta();
-        JLabel lblCupos = new JLabel(cupos);
-        lblCupos.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        pnlDetalles.add(lblCupos);
-
-        add(pnlDetalles, BorderLayout.CENTER);
-
-        if (asignado) {
-            JLabel lblAsignado = new JLabel("Has sido ASIGNADO a este proyecto.");
-            lblAsignado.setForeground(new Color(46, 125, 50));
-            lblAsignado.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            lblAsignado.setHorizontalAlignment(SwingConstants.RIGHT);
-            add(lblAsignado, BorderLayout.SOUTH);
-        }
+        inicializarComponentes();
     }
 
-    private JLabel crearDatoLabel(String titulo, String valor) {
-        JLabel lbl = new JLabel(titulo + valor);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return lbl;
+    private void inicializarComponentes() {
+        setLayout(new BorderLayout(15, 10));
+        setBackground(Color.WHITE);
+        
+        setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(new Color(220, 220, 220), 1, true),
+                new EmptyBorder(20, 25, 20, 25)
+        ));
+        
+        setPreferredSize(new Dimension(550, 110));
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
+
+        JPanel pnlInfo = new JPanel();
+        pnlInfo.setLayout(new BoxLayout(pnlInfo, BoxLayout.Y_AXIS));
+        pnlInfo.setBackground(Color.WHITE);
+
+        JLabel lblTitulo = new JLabel(iniciativa.getTitulo());
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblTitulo.setForeground(Color.BLACK);
+
+        JLabel lblDetalles = new JLabel("<html><b>Ubicación:</b> " + iniciativa.getNombreSector() + 
+                                        " &nbsp;&nbsp;&nbsp; <b>Fecha:</b> " + iniciativa.getFechaEjecucion() + "</html>");
+        lblDetalles.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblDetalles.setForeground(Color.DARK_GRAY);
+
+        JLabel lblTarea = new JLabel("Tarea: " + iniciativa.getNombreTarea());
+        lblTarea.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+        lblTarea.setForeground(new Color(100, 100, 100));
+
+        pnlInfo.add(lblTitulo);
+        pnlInfo.add(Box.createVerticalStrut(8));
+        pnlInfo.add(lblDetalles);
+        pnlInfo.add(Box.createVerticalStrut(3));
+        pnlInfo.add(lblTarea);
+
+        JPanel pnlAccion = new JPanel(new GridBagLayout()); 
+        pnlAccion.setBackground(Color.WHITE);
+
+        JButton btnAccion = new JButton();
+        btnAccion.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnAccion.setPreferredSize(new Dimension(140, 40));
+        btnAccion.setFocusPainted(false);
+
+        if (estadoParticipacion.equalsIgnoreCase("Pendiente")) {
+            btnAccion.setText("En Espera");
+            btnAccion.setBackground(new Color(230, 140, 0)); 
+            btnAccion.setForeground(Color.WHITE);
+        } else if (estadoParticipacion.equalsIgnoreCase("Aceptado")) {
+            btnAccion.setText("¡Aprobado!");
+            btnAccion.setBackground(new Color(180, 200, 180)); 
+            btnAccion.setForeground(Color.DARK_GRAY);
+            btnAccion.setEnabled(false); 
+        } else {
+            btnAccion.setText("Postularme");
+            btnAccion.setBackground(VERDE_ECO);
+            btnAccion.setForeground(Color.WHITE);
+            btnAccion.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            
+            btnAccion.addActionListener(e -> {
+                controlador.postularAIniciativa(iniciativa.getIdIniciativa(), iniciativa.getTitulo());
+            });
+        }
+
+        pnlAccion.add(btnAccion);
+
+        add(pnlInfo, BorderLayout.CENTER);
+        add(pnlAccion, BorderLayout.EAST);
     }
 }

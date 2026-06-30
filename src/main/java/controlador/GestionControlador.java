@@ -5,22 +5,19 @@ import service.GestionService;
 import vista.GestionAmbiental_panel;
 
 import java.awt.event.*;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-
 /**
  * Controlador del módulo de Gestión Ambiental.
- * Inicializa la vista, el modelo y los eventos del sistema.
- * Se encarga de capturar los eventos de la interfaz gráfica (Vista) y delegar 
- * las operaciones de validación, registro y búsqueda a la capa de Servicio.
  * Proyecto: Sistema de Gestión de Iniciativas de Preservación Ambiental (SGIPA) - EcoVida
- * @author Dominica Lilibeth Torres Bohorquez
- * @version 1.0
- * @since 2026-05-05
+ * Permite el flujo de datos entre la interfaz gráfica y los servicios de persistencia,
+ * aplicando las reglas de negocio establecidas para el catálogo de convenios ecológicos.
+ * * @author Dominica Lilibeth Torres Bohorquez
+ * @version 1.2
  */
 public class GestionControlador implements ActionListener {
 
@@ -30,6 +27,10 @@ public class GestionControlador implements ActionListener {
     private List<Gestion> listaGlobal;
     private int idFilaSeleccionada = -1;
 
+    /**
+     * Inicializa el controlador del módulo de gestión ambiental.
+     * * @param vista Panel de la interfaz gráfica correspondiente a la gestión ambiental.
+     */
     public GestionControlador(GestionAmbiental_panel vista) {
         this.vista = vista;
         this.modelo = new Gestion();
@@ -38,6 +39,10 @@ public class GestionControlador implements ActionListener {
         listarEnTabla();
     }
 
+    /**
+     * Configura y registra los listeners de eventos para los componentes de la vista,
+     * incluyendo listeners de teclado para validación en tiempo real y selección de tablas.
+     */
     private void iniciarEventos() {
         this.vista.btnGuardar.addActionListener(this);
         this.vista.btnActualizar.addActionListener(this);
@@ -82,7 +87,7 @@ public class GestionControlador implements ActionListener {
                             vista.txtRuc.setText(ga.getRucEntidadAliada());
                             vista.txtNombreEntidad.setText(ga.getNombreEntidad());
                             vista.cbxTipoAutorizacion.setSelectedItem(ga.getTipoAutorizacion());
-                            vista.txtCategoriaImpacto.setText(ga.getCategoriaImpacto());
+                            vista.cbxCategoria.setSelectedItem(ga.getCategoriaImpacto());
                             vista.cbxUnidadMedida.setSelectedItem(ga.getUnidadMedida());
                             vista.txtMetaAnual.setText(String.valueOf(ga.getMetaAnualGlobal()));
                             vista.cbxEstadoConvenio.setSelectedItem(ga.getEstadoConvenio());
@@ -105,31 +110,39 @@ public class GestionControlador implements ActionListener {
     
     /**
      * Valida mediante reglas de negocio los datos de la entidad aliada antes de su persistencia.
-     * Verifica que el RUC contenga exactamente 13 dígitos numéricos y que la meta sea un valor válido.
-     * Este método es testeado unitariamente mediante JUnit.
-     * @param ruc El número de RUC de la entidad aliada ingresado en el formulario.
-     * @param nombre El nombre completo o razón social de la entidad.
-     * @param impacto La descripción de la categoría de impacto ambiental.
-     * @param metaTexto La meta anual global capturada como texto desde la interfaz.
-     * @return Una cadena de texto (String) que acumula los mensajes de error encontrados. Si retorna vacío (""), los datos son válidos.
+     * Incluye control estricto de campos incompletos y unicidad de RUC y Nombre.
+     * * @param ruc Cadena de texto correspondiente al RUC evaluado.
+     * @param nombre Cadena de texto del nombre de la entidad.
+     * @param metaTexto Formato String del número entero de la meta global.
+     * @param idActual ID del registro actual (útil para omitir la validación de unicidad al actualizar).
+     * @return String con el consolidado de errores encontrados; cadena vacía si los datos son válidos.
      */
-    public String validarDatosGestion(String ruc, String nombre, String impacto, String metaTexto) {
+    public String validarDatosGestion(String ruc, String nombre, String metaTexto, int idActual) {
         String mensajeError = "";
-
         if (ruc == null || ruc.trim().isEmpty()) {
             mensajeError += "- El RUC de la entidad es obligatorio.\n";
         } else if (!ruc.matches("\\d+")) {
             mensajeError += "- El RUC solo debe contener números.\n";
         } else if (ruc.length() != 13) {
             mensajeError += "- El RUC debe tener exactamente 13 dígitos numéricos.\n";
+        } else if (listaGlobal != null) {
+            for (Gestion ga : listaGlobal) {
+                if (ga.getRucEntidadAliada().equals(ruc) && ga.getIdGestion() != idActual) {
+                    mensajeError += "- El RUC ingresado ya existe en el sistema, ingrese otro.\n";
+                    break;
+                }
+            }
         }
 
         if (nombre == null || nombre.trim().isEmpty()) {
             mensajeError += "- El nombre de la entidad es obligatorio.\n";
-        }
-
-        if (impacto == null || impacto.trim().isEmpty()) {
-            mensajeError += "- La categoría de impacto es obligatoria.\n";
+        } else if (listaGlobal != null) {
+            for (Gestion ga : listaGlobal) {
+                if (ga.getNombreEntidad().trim().equalsIgnoreCase(nombre.trim()) && ga.getIdGestion() != idActual) {
+                    mensajeError += "- El nombre de la entidad ya se encuentra registrado, ingrese otro.\n";
+                    break;
+                }
+            }
         }
 
         if (metaTexto == null || metaTexto.trim().isEmpty()) {
@@ -149,17 +162,13 @@ public class GestionControlador implements ActionListener {
     }
     
     /**
-     * Guarda un nuevo registro de gestión ambiental.
-     * Valida los datos ingresados y registra la información
-     * en la base de datos mediante la capa de servicio.
+     * Procesa el almacenamiento de un nuevo registro de gestión ambiental tras superar validaciones.
      */
     private void guardar() {
         String ruc = vista.txtRuc.getText().trim();
         String nombre = vista.txtNombreEntidad.getText().trim();
-        String impacto = vista.txtCategoriaImpacto.getText().trim();
         String meta = vista.txtMetaAnual.getText().trim();
-
-        String errores = validarDatosGestion(ruc, nombre, impacto, meta);
+        String errores = validarDatosGestion(ruc, nombre, meta, 0);
 
         if (!errores.isEmpty()) {
             JOptionPane.showMessageDialog(vista, "Corrija los siguientes errores:\n" + errores, "Error de Validación", JOptionPane.WARNING_MESSAGE);
@@ -180,8 +189,7 @@ public class GestionControlador implements ActionListener {
     }
     
     /**
-     * Actualiza un registro existente seleccionado en la tabla.
-     * Verifica la selección y valida los datos antes de persistir los cambios.
+     * Procesa la modificación de un registro seleccionado basándose en su ID único de gestión.
      */
     private void actualizar() {
         if (idFilaSeleccionada == -1) {
@@ -191,11 +199,9 @@ public class GestionControlador implements ActionListener {
 
         String ruc = vista.txtRuc.getText().trim();
         String nombre = vista.txtNombreEntidad.getText().trim();
-        String impacto = vista.txtCategoriaImpacto.getText().trim();
         String meta = vista.txtMetaAnual.getText().trim();
 
-        String errores = validarDatosGestion(ruc, nombre, impacto, meta);
-
+        String errores = validarDatosGestion(ruc, nombre, meta, idFilaSeleccionada);
         if (!errores.isEmpty()) {
             JOptionPane.showMessageDialog(vista, "Corrija los siguientes errores:\n" + errores, "Error de Validación", JOptionPane.WARNING_MESSAGE);
             return;
@@ -215,82 +221,92 @@ public class GestionControlador implements ActionListener {
     }
     
     /**
-     * Elimina un registro seleccionado de la tabla.
-     * Muestra mensajes de confirmación o error según el resultado.
+     * Ejecuta la eliminación física definitiva de un registro de la base de datos (RF-E05).
+     * Solicita una confirmación explícita de doble paso debido al impacto crítico del borrado
+     * y captura excepciones asociadas a restricciones de integridad referencial.
      */
     private void eliminar() {
         if (idFilaSeleccionada != -1) {
-            try {
-                if (gestionService.eliminarGestion(idFilaSeleccionada)) { 
-                    JOptionPane.showMessageDialog(vista, "Registro eliminado correctamente."); 
-                    limpiarCampos();
-                    listarEnTabla();
+            int respuesta = JOptionPane.showConfirmDialog(
+                    vista, 
+                    "¿Está seguro de que desea eliminar este registro?", 
+                    "Confirmación", 
+                    JOptionPane.YES_NO_OPTION, 
+                    JOptionPane.QUESTION_MESSAGE
+            );
+            
+            if (respuesta == JOptionPane.YES_OPTION) {
+                try {
+                    if (gestionService.eliminarGestion(idFilaSeleccionada)) { 
+                        JOptionPane.showMessageDialog(vista, "Registro eliminado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE); 
+                        limpiarCampos();
+                        listarEnTabla();
+                    }
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(vista, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(vista, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         } else {
             JOptionPane.showMessageDialog(vista, "Seleccione una fila para eliminar.");
         }
     }
     
-    
     /**
-     * Transfiere los datos ingresados en la interfaz gráfica
-     * hacia el objeto modelo de Gestión.
+     * Transfiere el contenido actual de los campos del formulario de la vista hacia la instancia del modelo.
      */
     private void llenarModelo() {
         modelo.setRucEntidadAliada(vista.txtRuc.getText().trim());
         modelo.setNombreEntidad(vista.txtNombreEntidad.getText().trim());
         modelo.setTipoAutorizacion(vista.cbxTipoAutorizacion.getSelectedItem().toString());
-        modelo.setCategoriaImpacto(vista.txtCategoriaImpacto.getText().trim());
+        modelo.setCategoriaImpacto(vista.cbxCategoria.getSelectedItem().toString());
         modelo.setUnidadMedida(vista.cbxUnidadMedida.getSelectedItem().toString());
         modelo.setMetaAnualGlobal(Integer.parseInt(vista.txtMetaAnual.getText().trim()));
     }
     
     /**
-     * Obtiene todas las gestiones registradas y las carga en la tabla.
+     * Recupera la totalidad de los registros de gestión ambiental desde la base de datos
+     * y refresca la cuadrícula visual de datos (JTable).
      */
     private void listarEnTabla() {
         listaGlobal = gestionService.listarGestiones(); 
         cargarDatosTabla(listaGlobal);
     }
     
-    
     /**
-     * Filtra la lista global de gestiones ambientales utilizando un término de búsqueda.
-     * La coincidencia se evalúa tanto en el RUC como en el Nombre de la entidad, ignorando mayúsculas y minúsculas.
-     * * @param textoFiltro El texto o fragmento introducido por el usuario en el buscador.
-     * @param listaOriginal La lista completa de entidades obtenida desde la base de datos.
-     * @return Una nueva lista (List) que contiene únicamente los objetos que coinciden con el filtro de búsqueda.
+     * Filtra una colección de datos basándose en coincidencias del RUC o Nombre de la entidad.
+     * * @param textoFiltro Patrón de búsqueda ingresado por el usuario.
+     * @param listaOriginal Lista completa de los datos en memoria.
+     * @return Lista filtrada que contiene únicamente las coincidencias encontradas.
      */
     public List<Gestion> filtrarDatosBuscador(String textoFiltro, List<Gestion> listaOriginal) {
-        List<Gestion> listaFiltrada = new ArrayList<>();
-        
         if (textoFiltro == null || textoFiltro.trim().isEmpty()) {
             return listaOriginal; 
         }
         
-        String texto = textoFiltro.toLowerCase().trim();
-        for (Gestion ga : listaOriginal) {
-            if (ga.getRucEntidadAliada().toLowerCase().contains(texto) || 
-                ga.getNombreEntidad().toLowerCase().contains(texto)) {
-                listaFiltrada.add(ga);
-            }
-        }
-        return listaFiltrada;
+        var texto = textoFiltro.toLowerCase().trim();
+        return listaOriginal.stream()
+                .filter(ga -> ga.getRucEntidadAliada().toLowerCase().contains(texto) || 
+                              ga.getNombreEntidad().toLowerCase().contains(texto))
+                .collect(Collectors.toList());
     }
 
+    /**
+     * Invoca el filtro de datos y actualiza inmediatamente los elementos renderizados en el JTable.
+     * * @param textoFiltro Patrón de búsqueda.
+     */
     private void filtrarTabla(String textoFiltro) {
         List<Gestion> resultados = filtrarDatosBuscador(textoFiltro, listaGlobal);
         cargarDatosTabla(resultados); 
     }
 
+    /**
+     * Reestructura el DefaultTableModel del JTable de la vista para desplegar la lista especificada.
+     * * @param lista Colección de objetos de tipo Gestion a renderizar.
+     */
     private void cargarDatosTabla(List<Gestion> lista) {
         DefaultTableModel model = (DefaultTableModel) vista.tblGestion.getModel();
         model.setRowCount(0); 
         for (Gestion ga : lista) {
-            
             model.addRow(new Object[]{
                 ga.getRucEntidadAliada(), 
                 ga.getNombreEntidad(), 
@@ -303,13 +319,10 @@ public class GestionControlador implements ActionListener {
         }
     }
     
-    /**
-     * Limpia todos los campos del formulario y reinicia la selección actual.
-     */
     private void limpiarCampos() {
         vista.txtRuc.setText("");
         vista.txtNombreEntidad.setText("");
-        vista.txtCategoriaImpacto.setText("");
+        vista.cbxCategoria.setSelectedIndex(0);
         vista.txtMetaAnual.setText("");
         vista.cbxTipoAutorizacion.setSelectedIndex(0);
         vista.cbxUnidadMedida.setSelectedIndex(0);
@@ -319,35 +332,34 @@ public class GestionControlador implements ActionListener {
     }
     
     /**
-     * Genera un reporte PDF con la información de las gestiones ambientales.
-     * Permite seleccionar la ubicación de guardado mediante un JFileChooser.
+     * Exporta el catálogo consolidado de registros a un documento externo en formato PDF en orientación horizontal.
      */
     private void generarReportePDF() {
-        JFileChooser fileChooser = new JFileChooser();
+        var fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Guardar Reporte PDF");
         fileChooser.setSelectedFile(new java.io.File("Reporte_Gestion_Ambiental.pdf"));
         
-        int seleccion = fileChooser.showSaveDialog(vista);
+        var seleccion = fileChooser.showSaveDialog(vista);
         if (seleccion == JFileChooser.APPROVE_OPTION) {
-            java.io.File archivo = fileChooser.getSelectedFile();
+            var archivo = fileChooser.getSelectedFile();
             try {
-                com.itextpdf.text.Document doc = new com.itextpdf.text.Document(com.itextpdf.text.PageSize.A4.rotate());
+                var doc = new com.itextpdf.text.Document(com.itextpdf.text.PageSize.A4.rotate());
                 com.itextpdf.text.pdf.PdfWriter.getInstance(doc, new java.io.FileOutputStream(archivo));
                 doc.open();
                 
-                com.itextpdf.text.Font fontTitulo = com.itextpdf.text.FontFactory.getFont(com.itextpdf.text.FontFactory.HELVETICA_BOLD, 18);
-                com.itextpdf.text.Paragraph titulo = new com.itextpdf.text.Paragraph("REPORTE DE GESTIÓN AMBIENTAL - ECOVIDA", fontTitulo);
+                var fontTitulo = com.itextpdf.text.FontFactory.getFont(com.itextpdf.text.FontFactory.HELVETICA_BOLD, 18);
+                var titulo = new com.itextpdf.text.Paragraph("REPORTE DE GESTIÓN AMBIENTAL - ECOVIDA", fontTitulo);
                 titulo.setAlignment(com.itextpdf.text.Element.ALIGN_CENTER);
                 doc.add(titulo);
                 doc.add(new com.itextpdf.text.Paragraph(" "));
                 
-                com.itextpdf.text.pdf.PdfPTable tabla = new com.itextpdf.text.pdf.PdfPTable(7);
+                var tabla = new com.itextpdf.text.pdf.PdfPTable(7);
                 tabla.setWidthPercentage(100);
                 
                 tabla.addCell("RUC"); tabla.addCell("Entidad"); tabla.addCell("Autorización"); 
                 tabla.addCell("Impacto"); tabla.addCell("Unidad"); tabla.addCell("Meta"); tabla.addCell("Estado");
                 
-                for (Gestion ga : listaGlobal) {
+                for (var ga : listaGlobal) {
                     tabla.addCell(ga.getRucEntidadAliada());
                     tabla.addCell(ga.getNombreEntidad());
                     tabla.addCell(ga.getTipoAutorizacion());
@@ -360,7 +372,7 @@ public class GestionControlador implements ActionListener {
                 doc.close();
                 
                 JOptionPane.showMessageDialog(vista, "PDF guardado en: " + archivo.getAbsolutePath());
-            } catch (Exception e) {
+            } catch (com.itextpdf.text.DocumentException | java.io.FileNotFoundException e) {
                 JOptionPane.showMessageDialog(vista, "Error al generar PDF. Asegúrate de no tener el archivo abierto.\n" + e.getMessage());
             }
         }

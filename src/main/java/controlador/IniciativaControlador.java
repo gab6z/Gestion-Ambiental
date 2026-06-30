@@ -31,14 +31,15 @@ import modelo.Sector;
  * @version 1.2
  */
 public class IniciativaControlador {
+
     private final IniciativaService iniciativaService = new IniciativaService();
     private final SectorService sectorService = new SectorService();
     private final TareaService tareaService = new TareaService();
     private final IniciativaPnl panel;
     private final dao.IniciativaDAO iniciativaDAO = new dao.IniciativaDAO();
-    
+
     private List<Iniciativa> iniciativasActuales;
-    
+
     /**
      * Constructor original del sistema, inicializa UI y BD.
      *
@@ -66,7 +67,7 @@ public class IniciativaControlador {
             cargarTabla();
         }
     }
-    
+
     /**
      * Inicializa y enlaza los escuchadores de eventos (ActionListeners y
      * MouseListeners) para los botones del formulario, cambios de visibilidad
@@ -83,12 +84,12 @@ public class IniciativaControlador {
             panel.limpiarFiltros();
             panel.cargarDatosTabla(iniciativasActuales);
         });
-        
+
         panel.addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override
             public void componentShown(java.awt.event.ComponentEvent evt) {
-                cargarCombos(); 
-                cargarTabla(); 
+                cargarCombos();
+                cargarTabla();
             }
         });
 
@@ -128,14 +129,14 @@ public class IniciativaControlador {
 
             dao.VoluntarioDAO voluntarioDAO = new dao.VoluntarioDAO();
             panel.cargarListaVoluntarios(voluntarioDAO.listar());
-            
+
             panel.cargarListaFiltroSectores(sectorService.listarSectores());
 
         } catch (SQLException e) {
             panel.mostrarError("Error al cargar datos: " + e.getMessage());
         }
     }
-    
+
     /**
      * Sincroniza la tabla visual de la interfaz recuperando el listado completo
      * actualizado de iniciativas registrado en el servidor de base de datos.
@@ -148,7 +149,7 @@ public class IniciativaControlador {
             panel.mostrarError("Error al cargar planificaciones: " + e.getMessage());
         }
     }
-    
+
     /**
      * Procesa la inserción o actualización de una iniciativa ambiental. Mapea
      * los datos del formulario, aplica las reglas estrictas de validación y, de
@@ -156,12 +157,12 @@ public class IniciativaControlador {
      * vinculados.
      */
     private void guardar() {
-        try {            
+        try {
             Iniciativa ini = panel.getIniciativaDelFormulario();
-            validarCamposObligatorios(ini); 
+            validarCamposObligatorios(ini);
             validarFechasYTiempos(ini);
             validarPresupuestoYLogistica(ini);
-            validarEstadoYSector(ini); 
+            validarEstadoYSector(ini);
             int idReal;
             if (ini.getIdIniciativa() == 0) {
                 idReal = iniciativaDAO.insertar(ini);
@@ -183,14 +184,12 @@ public class IniciativaControlador {
             panel.limpiarFormulario();
             cargarTabla();
         } catch (IllegalArgumentException e) {
-
             panel.mostrarError(e.getMessage());
-
         } catch (Exception e) {
             panel.mostrarError("Error: " + e.getMessage());
         }
     }
-    
+
     /**
      * Elimina de forma lógica o física una planificación de iniciativa del
      * sistema. Solicita una confirmación explícita al usuario advirtiendo la
@@ -200,16 +199,16 @@ public class IniciativaControlador {
     private void eliminar() {
         try {
             Iniciativa ini = panel.getIniciativaDelFormulario();
-            
+
             if (ini.getIdIniciativa() == 0) {
                 panel.mostrarError("Debe seleccionar una iniciativa de la tabla para eliminar.");
                 return;
             }
 
-            int confirmacion = JOptionPane.showConfirmDialog(panel, 
-                    "¿Está seguro de eliminar la planificación: '" + ini.getTitulo() + "'?\n" +
-                    "Esto borrará también las participaciones asociadas.", 
-                    "Confirmar Eliminación", 
+            int confirmacion = JOptionPane.showConfirmDialog(panel,
+                    "¿Está seguro de eliminar la planificación: '" + ini.getTitulo() + "'?\n"
+                    + "Esto borrará también las participaciones asociadas.",
+                    "Confirmar Eliminación",
                     JOptionPane.YES_NO_OPTION);
 
             if (confirmacion == JOptionPane.YES_OPTION) {
@@ -221,16 +220,16 @@ public class IniciativaControlador {
 
         } catch (IllegalArgumentException | SQLException e) {
             panel.mostrarError("No se pudo eliminar:\n" + e.getMessage());
-        } 
-       
+        }
+
     }
-    
+
     /**
      * Aplica reglas de negocio temporales de la aplicación para evitar
      * inconsistencias cronológicas.
      *
-     * @param ini El objeto iniciativa con las fechas y tiempos provistos por
-     * el formulario.
+     * @param ini El objeto iniciativa con las fechas y tiempos provistos por el
+     * formulario.
      * @throws IllegalArgumentException Si la fecha de fin es anterior a la de
      * ejecución, o si las horas se solapan de manera ilógica.
      */
@@ -247,7 +246,7 @@ public class IniciativaControlador {
             }
         }
     }
-    
+
     /**
      * Valida la consistencia financiera y los límites de almacenamiento de
      * datos logísticos. Protege al sistema contra desbordamientos de datos e
@@ -266,16 +265,16 @@ public class IniciativaControlador {
         if (ini.getMeta() <= 0) {
             throw new IllegalArgumentException("Debe asignar una cantidad de participantes mayor a 0.");
         }
-        
-        if (ini.getMeta() >= 5000){
+
+        if (ini.getMeta() >= 5000) {
             throw new IllegalArgumentException("Debe asignar una cantidad de participantes menor a 5000.");
         }
-        
+
         if (ini.getDescripcion() != null && ini.getDescripcion().length() > 500) {
             throw new IllegalArgumentException("La descripción logística excede el límite de 500 caracteres.");
         }
     }
-    
+
     /**
      * Valida que los campos obligatorios del formulario no estén vacíos y que
      * los datos numéricos tengan el formato correcto.
@@ -289,11 +288,11 @@ public class IniciativaControlador {
         if (ini.getTitulo() == null || ini.getTitulo().trim().isEmpty()) {
             throw new IllegalArgumentException("El título de la iniciativa es obligatorio.");
         }
-        
+
         if (ini.getTitulo().trim().length() < 3) {
             throw new IllegalArgumentException("El título debe tener al menos 3 caracteres.");
         }
-        
+
         if (ini.getTitulo().trim().length() > 50) {
             throw new IllegalArgumentException("El título no puede superar los 50 caracteres.");
         }
@@ -314,14 +313,14 @@ public class IniciativaControlador {
             throw new IllegalArgumentException("La fecha de ejecución es obligatoria.");
         }
 
-        if (ini.getIdSector() > 0) {
+        if (ini.getIdSector() > 0) { // solo si hay sector válido
             List<Voluntario> seleccionados = panel.getVoluntariosSeleccionados();
             if (seleccionados == null || seleccionados.isEmpty()) {
                 throw new IllegalArgumentException("Debe asignar al menos un voluntario.");
             }
         }
     }
-    
+
     /**
      * Valida que no se altere el sector de una iniciativa si esta ya se
      * encuentra en estado "En ejecución".
@@ -351,7 +350,7 @@ public class IniciativaControlador {
             }
         }
     }
-    
+
     /**
      * Aplica los filtros seleccionados (rango de fechas, sectores y estado)
      * sobre la lista local de iniciativas y actualiza la tabla con los
@@ -366,7 +365,7 @@ public class IniciativaControlador {
 
         Date desde = panel.getFiltroDesde();
         Date hasta = panel.getFiltroHasta();
-        List<Sector> sectoresSel = panel.getSectoresFiltroSeleccionados();
+        Sector sectorSeleccionado = panel.getSectorFiltroSeleccionado();
         String estado = panel.getFiltroEstado();
 
         if (desde != null && hasta != null && desde.after(hasta)) {
@@ -376,7 +375,7 @@ public class IniciativaControlador {
 
         List<Iniciativa> resultado = iniciativasActuales.stream()
                 .filter(ini -> filtrarPorFecha(ini, desde, hasta))
-                .filter(ini -> filtrarPorSector(ini, sectoresSel))
+                .filter(ini -> filtrarPorSectorUnico(ini, sectorSeleccionado))
                 .filter(ini -> filtrarPorEstado(ini, estado))
                 .toList();
 
@@ -399,28 +398,16 @@ public class IniciativaControlador {
      */
     private boolean filtrarPorFecha(Iniciativa ini, Date desde, Date hasta) {
         Date fechaEj = ini.getFechaEjecucion();
-
         if (fechaEj == null) {
             return false;
         }
-        
-        return (desde == null || !fechaEj.before(desde)) && (hasta == null || !fechaEj.after(hasta));
-    }
-
-    /**
-     * Evalúa si una iniciativa pertenece a alguno de los sectores
-     * seleccionados. Si la lista está vacía, no aplica restricción.
-     *
-     * @param ini Iniciativa a evaluar.
-     * @param sectoresSel Lista de sectores seleccionados en el filtro.
-     * @return true si la iniciativa pasa el filtro de sector.
-     */
-    private boolean filtrarPorSector(Iniciativa ini, List<Sector> sectoresSel) {
-        if (sectoresSel == null || sectoresSel.isEmpty()) {
-            return true;
+        if (desde != null && fechaEj.before(desde)) {
+            return false;
         }
-        return sectoresSel.stream()
-                .anyMatch(s -> s.getIdSector() == ini.getIdSector());
+        if (hasta != null && fechaEj.after(hasta)) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -432,12 +419,27 @@ public class IniciativaControlador {
      * @return true si la iniciativa pasa el filtro de estado.
      */
     private boolean filtrarPorEstado(Iniciativa ini, String estado) {
-        if (estado == null || "Todos".equals(estado)) {
+        if (estado == null || estado.equals("Todos")) {
             return true;
         }
         return estado.equalsIgnoreCase(ini.getEstado());
     }
-    
+
+    /**
+     * Evalúa si una iniciativa pertenece al sector seleccionado. Si el sector
+     * es null (representa "Todos"), no aplica restricción.
+     *
+     * @param ini Iniciativa a evaluar.
+     * @param sector Sector seleccionado en el filtro (puede ser null).
+     * @return true si la iniciativa pasa el filtro de sector.
+     */
+    private boolean filtrarPorSectorUnico(Iniciativa ini, Sector sector) {
+        if (sector == null) {
+            return true; // "Todos" seleccionado
+        }
+        return sector.getIdSector() == ini.getIdSector();
+    }
+
     /**
      * Genera y exporta dinámicamente un documento formal en formato PDF (A4 en
      * orientación apaisada) conteniendo los registros completos almacenados en

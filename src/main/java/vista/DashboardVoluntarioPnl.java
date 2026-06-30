@@ -3,73 +3,66 @@ package vista;
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
+import java.util.Map;
 import javax.swing.border.EmptyBorder;
 import modelo.Iniciativa;
+import controlador.DashboardVoluntarioControlador;
 
-/**
- * Panel de Interfaz Gráfica (Vista) que representa el Dashboard principal para
- * el Voluntario. Hereda de {@link JPanel} y se encarga de estructurar una
- * cuadrícula dinámica y deslizable donde se renderizan las tarjetas
- * contenedoras de información (Cards) sobre iniciativas ambientales.
- * <p>
- * Sigue los principios de la arquitectura MVC, abstrayéndose por completo de la
- * lógica de datos y limitándose al refresco, pintado y revalidación de
- * componentes gráficos en el hilo de Swing.
- * </p>
- *
- * * @author Solis Caballero Geovanny Andrés
- * @version 1.2
- */
 public class DashboardVoluntarioPnl extends JPanel {
-    /**
-     * Contenedor secundario encargado de agrupar y organizar horizontalmente
-     * los componentes de tipo Card.
-     */
+    
     private JPanel contenedorCards;
+    private final Color VERDE_ECO = new Color(23, 93, 62);
+    private final Color FONDO_APP = new Color(245, 247, 250);
 
-    /**
-     * Constructor por defecto del panel. Configura la disposición espacial de
-     * la sección, define la paleta cromática institucional basada en tonos
-     * verdes ecológicos y monta el contenedor con soporte para scroll vertical
-     * adaptativo.
-     */
     public DashboardVoluntarioPnl() {
         setLayout(new BorderLayout());
-        setBackground(new Color(245, 247, 250));
+        setBackground(FONDO_APP);
+
+        JPanel pnlCabecera = new JPanel();
+        pnlCabecera.setLayout(new BoxLayout(pnlCabecera, BoxLayout.Y_AXIS));
+        pnlCabecera.setBackground(FONDO_APP);
+        pnlCabecera.setBorder(new EmptyBorder(30, 40, 15, 40)); 
 
         JLabel lblTituloSeccion = new JLabel("Iniciativas de Gestión Ambiental");
-        lblTituloSeccion.setFont(new Font("Segoe UI", Font.BOLD, 26));
-        lblTituloSeccion.setBorder(new EmptyBorder(20, 25, 10, 25));
-        lblTituloSeccion.setForeground(new Color(23, 93, 62));
-        add(lblTituloSeccion, BorderLayout.NORTH);
+        lblTituloSeccion.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        lblTituloSeccion.setForeground(VERDE_ECO);
         
-        contenedorCards = new JPanel(new FlowLayout(FlowLayout.LEFT, 25, 25));
-        contenedorCards.setBackground(new Color(245, 247, 250));
+        JLabel lblSubtitulo = new JLabel("Explora los proyectos disponibles y revisa el estado de tus postulaciones.");
+        lblSubtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        lblSubtitulo.setForeground(Color.GRAY);
+
+        pnlCabecera.add(lblTituloSeccion);
+        pnlCabecera.add(Box.createVerticalStrut(5));
+        pnlCabecera.add(lblSubtitulo);
+        
+        add(pnlCabecera, BorderLayout.NORTH);
+        
+        contenedorCards = new JPanel();
+        contenedorCards.setLayout(new BoxLayout(contenedorCards, BoxLayout.Y_AXIS));
+        contenedorCards.setBackground(FONDO_APP);
 
         JScrollPane scroll = new JScrollPane(contenedorCards);
         scroll.setBorder(null);
-        scroll.getVerticalScrollBar().setUnitIncrement(16);
-        add(scroll, BorderLayout.CENTER);
+        scroll.getVerticalScrollBar().setUnitIncrement(16); 
+        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        
+        JPanel pnlScrollWrapper = new JPanel(new BorderLayout());
+        pnlScrollWrapper.setBackground(FONDO_APP);
+        pnlScrollWrapper.setBorder(new EmptyBorder(0, 40, 0, 40));
+        pnlScrollWrapper.add(scroll, BorderLayout.CENTER);
+
+        add(pnlScrollWrapper, BorderLayout.CENTER);
     }
     
-    /**
-     * Reconstruye dinámicamente el catálogo de tarjetas visuales en el panel.
-     * Remueve los componentes previos del contenedor, itera el listado total de
-     * planificaciones contrastando el estado de pertenencia del voluntario para
-     * instanciar nuevos objetos {@code IniciativaCard}, y fuerza el repintado
-     * estructural de la interfaz de usuario.
-     *
-     * * @param listaTotal Colección {@link List} que contiene el universo de
-     * todas las instancias de {@link Iniciativa} vigentes.
-     * @param misIds Colección {@link List} de enteros conteniendo únicamente
-     * los IDs de las iniciativas a las que pertenece el voluntario autenticado.
-     */
-    public void cargarCards(List<Iniciativa> listaTotal, List<Integer> misIds) {
+    public void cargarCards(List<Iniciativa> listaTotal, Map<Integer, String> estadoParticipaciones, DashboardVoluntarioControlador controlador) {
         contenedorCards.removeAll();
+        
         for (Iniciativa ini : listaTotal) {
-            boolean esMia = misIds.contains(ini.getIdIniciativa());
-            contenedorCards.add(new IniciativaCard(ini, esMia));
+            String estado = estadoParticipaciones.getOrDefault(ini.getIdIniciativa(), "NO_INSCRITO");
+            contenedorCards.add(new IniciativaCard(ini, estado, controlador));
+            contenedorCards.add(Box.createVerticalStrut(15)); 
         }
+        
         contenedorCards.revalidate();
         contenedorCards.repaint();
     }
