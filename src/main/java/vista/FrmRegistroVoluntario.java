@@ -6,7 +6,9 @@ package vista;
 
 /**
  *
- * @author Usuario
+ * @author EDUARDO CHAVEZ
+ * @version 1.0
+ * @since 2026-05-07
  */
 
 
@@ -119,17 +121,24 @@ public class FrmRegistroVoluntario extends JFrame {
 
     private void registrarVoluntario() {
         try {
-            // Capturamos la contraseña
+            String cedula = txtCedula.getText().trim();
+            if (cedula.isEmpty()) {
+                throw new IllegalArgumentException("El campo Cédula no puede estar vacío.");
+            }
+            if (cedula.length() > 10) {
+                throw new IllegalArgumentException("La cédula no puede tener más de 10 dígitos.");
+            }
+           
             String contra = new String(txtContrasena.getPassword());
             if (contra.trim().isEmpty()) {
                 throw new IllegalArgumentException("La contraseña no puede estar vacía.");
             }
 
             Voluntario v = new Voluntario();
-            v.setCedula(txtCedula.getText());
+            v.setCedula(cedula);
             v.setNombres_completos(txtNombres.getText());
             v.setCorreo(txtCorreo.getText());
-            v.setContrasena(contra); // ¡AQUÍ GUARDAMOS LA CONTRASEÑA EN EL OBJETO!
+            v.setContrasena(contra); 
             v.setTelefono(txtTelefono.getText());
             v.setGenero(cbxGenero.getSelectedItem().toString());
             v.setDisponibilidad_dias(txtDisponibilidad.getText());
@@ -139,7 +148,6 @@ public class FrmRegistroVoluntario extends JFrame {
             VoluntarioDAO dao = new VoluntarioDAO();
             dao.insertar(v);
 
-            // Mensaje actualizado
             JOptionPane.showMessageDialog(this, 
                 "¡Registro exitoso!\nYa puedes iniciar sesión con tu correo y contraseña.", 
                 "Bienvenido a EcoVida", JOptionPane.INFORMATION_MESSAGE);

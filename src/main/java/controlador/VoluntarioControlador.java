@@ -15,7 +15,7 @@ import java.io.FileOutputStream;
  * Actúa como intermediario entre la interfaz gráfica {@link VoluntariosPnl} 
  * y la lógica de negocio {@link VoluntarioService}.
  * * Maneja eventos de usuario, persistencia de datos y generación de reportes PDF.
- * * @author EDUARDO
+ * * @author EDUARDO CHAVEZ
  * @version 1.1
  * @since 2026-05-07
  */
@@ -73,12 +73,21 @@ public class VoluntarioControlador {
             if (texto.isEmpty()) {
                 voluntariosActuales = voluntarioService.listarVoluntarios();
             } else {
-                if (filtro.equals("Cédula")) {
+                if ("Cédula".equals(filtro)) {
                     voluntariosActuales = new java.util.ArrayList<>();
                     Voluntario v = voluntarioService.buscarPorCedula(texto);
-                    if (v != null) voluntariosActuales.add(v);
+                    if (v != null) {
+                        voluntariosActuales.add(v);
+                    }
                 } else {
                     voluntariosActuales = voluntarioService.buscarPorNombre(texto);
+                }
+
+                if (voluntariosActuales == null || voluntariosActuales.isEmpty()) {
+                    JOptionPane.showMessageDialog(panel, 
+                        "No hay ningún registro con ese dato.", 
+                        "Búsqueda sin resultados", 
+                        JOptionPane.WARNING_MESSAGE);
                 }
             }
             panel.cargarDatosTabla(voluntariosActuales);
