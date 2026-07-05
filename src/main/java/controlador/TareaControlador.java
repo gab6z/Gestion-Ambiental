@@ -17,26 +17,20 @@ import vista.TareasPnl;
  * y la exportación de reportes detallados en formato PDF.
  * Proyecto: Sistema de Gestión Ambiental (EcoVida)
  * @author Leandro Palacios
- * @version 1.0
- * @since 2026-05-06
+ * @version 1.2
+ * @since 2026-06-28
  */
-
 public class TareaControlador implements ActionListener, KeyListener {
-    private Tarea modelo;
-    private TareaService service;
-    private TareasPnl vista;
+    private final Tarea modelo;
+    private final TareaService service;
+    private final TareasPnl vista;
 
-    /**
-     * Constructor que inicializa los componentes y los escuchadores de eventos.
-     * @param modelo Instancia del modelo Tarea.
-     * @param service Capa de servicios para persistencia de datos.
-     * @param vista Panel de interfaz de usuario.
-     */
     public TareaControlador(Tarea modelo, TareaService service, TareasPnl vista) {
         this.modelo = modelo;
         this.service = service;
         this.vista = vista;
 
+        // Registro de eventos de botones
         this.vista.btnGuardar.addActionListener(this);
         this.vista.btnActualizar.addActionListener(this);
         this.vista.btnEliminar.addActionListener(this);
@@ -44,9 +38,11 @@ public class TareaControlador implements ActionListener, KeyListener {
         this.vista.btnFiltrar.addActionListener(this);
         this.vista.btnExportarPDF.addActionListener(this);
         
+        // Registro de eventos de filtros y teclado
         this.vista.txtBuscar.addKeyListener(this);
         this.vista.cbxFiltroDificultad.addActionListener(this);
 
+        // Evento de selección en tabla
         this.vista.tablaTareas.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -55,14 +51,8 @@ public class TareaControlador implements ActionListener, KeyListener {
         });
     }
 
-    /**
-     * Inicializa la vista cargando la tabla de datos.
-     */
     public void iniciar() { listar(); }
 
-    /**
-     * Recupera todas las tareas del servicio y actualiza la tabla en la vista.
-     */
     public void listar() {
         vista.modelo.setRowCount(0);
         try {
@@ -74,7 +64,12 @@ public class TareaControlador implements ActionListener, KeyListener {
 
     private void llenarTabla(List<Tarea> lista) {
         for (Tarea t : lista) {
-            vista.modelo.addRow(new Object[]{t.getIdTarea(), t.getNombreTarea(), t.getDificultadTecnica(), t.getEstadoTarea()});
+            vista.modelo.addRow(new Object[]{
+                t.getIdTarea(), 
+                t.getNombreTarea(), 
+                t.getDificultadTecnica(),
+                t.getCupoRecomendado(),
+                t.getEstadoTarea()});
         }
     }
 
@@ -96,25 +91,41 @@ public class TareaControlador implements ActionListener, KeyListener {
     }
 
     /**
-     * Procesa el guardado/actualización de tareas.
-     * Evaluado mediante Complejidad Ciclomática (Análisis Estático).
-     * @return Código de estado String para validación en pruebas unitarias.
-     * @throws Exception Si ocurre un error de conexión con la base de datos.
+     * MÉTODO 1 PARA V&V: Procesa el guardado/actualización de tareas con validaciones robustas.
      */
-    public String Guardado() throws Exception {
+    public String guardado() throws Exception {
         String nombre = vista.txtNombre.getText().trim();
         String herramientas = vista.txtHerramientas.getText().trim();
         String cupoStr = vista.txtCupo.getText().trim();
+        String descripcion = vista.txtDescripcion.getText().trim();
+        String dificultad = vista.cbxDificultad.getSelectedItem().toString();
+        String estado = vista.cbxEstado.getSelectedItem().toString();
 
-        if (nombre.isEmpty() || herramientas.isEmpty() || cupoStr.isEmpty()) {
-            return "ERROR_CAMPOS";
+        // 1. Validación de campos vacíos obligatorios
+        if (nombre.isEmpty() || herramientas.isEmpty() || cupoStr.isEmpty() || descripcion.isEmpty()) {
+            return "ERROR_CAMPOS_VACIOS";
         }
         
+        // 2. Validación de selección obligatoria en JComboBox
+        if (dificultad.equals("Seleccionar...")) {
+            return "ERROR_SELECCION_DIFICULTAD";
+        }
+        
+        if (estado.equals("Seleccionar...")) {
+            return "ERROR_SELECCION_ESTADO";
+        }
+
+        // 3. Validación de longitud máxima en campos de texto
+        if (nombre.length() > 50 || herramientas.length() > 150 || descripcion.length() > 250) {
+            return "ERROR_LONGITUD_EXCEDIDA";
+        }
+
+        // 4. Validación de formatos alfabéticos con expresiones regulares
         if (!nombre.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$") || !herramientas.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ, ]+$")) {
             return "ERROR_FORMATO_TEXTO";
         }
 
-
+        // 5. Validación de rango numérico
         try {
             int cupo = Integer.parseInt(cupoStr);
             if (cupo < 1 || cupo > 50) {
@@ -122,6 +133,13 @@ public class TareaControlador implements ActionListener, KeyListener {
             }
         } catch (NumberFormatException e) {
             return "ERROR_DATO_NUMERICO";
+        }
+
+        // CANDADO 1: Validación de nombre duplicado en Base de Datos (Solo aplica al CREAR una nueva tarea)
+        if (vista.txtId.getText().isEmpty()) {
+            if (service.existeNombreTarea(nombre)) {
+                return "ERROR_NOMBRE_DUPLICADO";
+            }
         }
 
         asignarModelo();
@@ -135,26 +153,15 @@ public class TareaControlador implements ActionListener, KeyListener {
         }
     }
 
-
-    /**
-     * PARA V y V: Determina si una tarea es apta para eliminación.
-     * Determina si una tarea es apta para eliminación.
-     * Evaluado mediante Análisis DU-Chain (Definición-Uso).
-     * @param id ID de la tarea a verificar.
-     * @param estadoActual Estado actual de la tarea.
-     * @return boolean true si se permite la eliminación, false de lo contrario.
-     */
     public boolean validarEstadoEliminacion(int id, String estadoActual) {
-        boolean esEliminable = false; 
-
-        if (id > 0) { 
-            // Bloquea la eliminación si está "En curso" OR si ya está "Inactiva"
-            if (!estadoActual.equals("En curso") && !estadoActual.equals("Inactiva")) { 
-                esEliminable = true; 
+        boolean esEliminable = false;
+        if (id > 0) {
+            if (!estadoActual.equals("En curso")) {
+                esEliminable = true;
             }
         }
-        return esEliminable; 
-    }    
+        return esEliminable;
+    }
     
     private void Filtro() {
         vista.modelo.setRowCount(0);
@@ -163,9 +170,6 @@ public class TareaControlador implements ActionListener, KeyListener {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    /**
-     * Genera un reporte PDF con la lista de tareas actualmente visibles en la tabla.
-     */
     private void exportarAPDF() {
         if (vista.tablaTareas.getRowCount() == 0) {
             JOptionPane.showMessageDialog(vista, "No hay datos para exportar.");
@@ -206,9 +210,6 @@ public class TareaControlador implements ActionListener, KeyListener {
         }
     }
 
-    /**
-     * Limpia los campos de texto y resetea las selecciones de la interfaz.
-     */
     public void limpiarFormulario() {
         vista.txtId.setText(""); vista.txtNombre.setText(""); vista.txtHerramientas.setText("");
         vista.txtCupo.setText(""); vista.txtDescripcion.setText(""); vista.txtBuscar.setText("");
@@ -216,7 +217,8 @@ public class TareaControlador implements ActionListener, KeyListener {
         vista.tablaTareas.clearSelection(); listar();
     }
     
-    @Override public void keyReleased(KeyEvent e) { if (e.getSource() == vista.txtBuscar) Filtro(); }
+    @Override 
+    public void keyReleased(KeyEvent e) { if (e.getSource() == vista.txtBuscar) { Filtro(); } }
     @Override public void keyTyped(KeyEvent e) {}
     @Override public void keyPressed(KeyEvent e) {}
 
@@ -226,60 +228,60 @@ public class TareaControlador implements ActionListener, KeyListener {
             limpiarFormulario();
         }
 
-        if (e.getSource() == vista.btnGuardar || e.getSource() == vista.btnActualizar) {
-            try {
-                String resultado = Guardado(); 
-                
-                switch (resultado) {
-                    case "EXITO_REGISTRO":
-                        JOptionPane.showMessageDialog(vista, "Tarea registrada exitosamente");
-                        listar(); limpiarFormulario(); break;
-                    case "EXITO_ACTUALIZACION":
-                        JOptionPane.showMessageDialog(vista, "Tarea actualizada exitosamente");
-                        listar(); limpiarFormulario(); break;
-                    case "ERROR_CAMPOS":
-                        JOptionPane.showMessageDialog(vista, "Por favor, llene los campos obligatorios"); break;
-                    case "ERROR_FORMATO_TEXTO":
-                        JOptionPane.showMessageDialog(vista, "Formato incorrecto: Use solo letras en Nombre/Herramientas"); break;
-                    case "ERROR_RANGO_CUPO":
-                        JOptionPane.showMessageDialog(vista, "El cupo debe estar entre 1 y 50 voluntarios"); break;
-                    case "ERROR_DATO_NUMERICO":
-                        JOptionPane.showMessageDialog(vista, "El cupo debe ser un valor numérico"); break;
-                    default:
-                        JOptionPane.showMessageDialog(vista, "Error en la operación: " + resultado); break;
-                }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(vista, "Error crítico de base de datos: " + ex.getMessage());
+        // Si se presiona Guardar, procesa directo las validaciones
+        if (e.getSource() == vista.btnGuardar) {
+            ejecutarProcesoGuardado();
+        }
+
+        // CANDADO 2: Si se presiona Actualizar, suspende el hilo para la confirmación explícita
+        if (e.getSource() == vista.btnActualizar) {
+            int filaSeleccionada = vista.tablaTareas.getSelectedRow();
+            if (filaSeleccionada == -1) {
+                JOptionPane.showMessageDialog(vista, "Por favor, seleccione una tarea de la tabla para actualizar.");
+                return;
+            }
+
+            int confirmacion = JOptionPane.showConfirmDialog(vista, 
+                    "¿Desea guardar los cambios en esta tarea?", 
+                    "Confirmación de Guardado", 
+                    JOptionPane.YES_NO_OPTION, 
+                    JOptionPane.QUESTION_MESSAGE);
+
+            if (confirmacion == JOptionPane.YES_OPTION) {
+                ejecutarProcesoGuardado();
+            } else {
+                // REVERSIÓN VISUAL: Cancela y restaura los datos de la interfaz cargando de nuevo la fila seleccionada
+                cargarDatosFormulario();
+                JOptionPane.showMessageDialog(vista, "Actualización cancelada. Se han restaurado los valores originales en la interfaz.");
             }
         }
 
         if (e.getSource() == vista.btnEliminar) {
-            int fila = vista.tablaTareas.getSelectedRow(); // Captura la fila seleccionada
-            if (fila == -1) {
+            if (vista.txtId.getText().isEmpty()) {
                 JOptionPane.showMessageDialog(vista, "Seleccione una tarea de la tabla");
                 return;
             }
-            
-            // Extrae el ID y el Estado directamente desde las columnas de la tabla de la vista
-            int id = Integer.parseInt(vista.tablaTareas.getValueAt(fila, 0).toString());
-            String estado = vista.tablaTareas.getValueAt(fila, 3).toString(); // Ajustar el índice de la columna si es necesario
-            
-            if (validarEstadoEliminacion(id, estado)) {
-                if (JOptionPane.showConfirmDialog(vista, "¿Seguro que desea dar de baja esta tarea?", "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                    try {
-                        service.darDeBaja(id);
-                        JOptionPane.showMessageDialog(vista, "Tarea inactiva exitosamente");
-                        listar(); limpiarFormulario();
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(vista, "Error al eliminar: " + ex.getMessage());
-                    }
-                }
-            } else {
-                // Compara ignorando mayúsculas/minúsculas para evitar fallos de formato en cadenas
-                if (estado.equalsIgnoreCase("Inactiva")) {
-                    JOptionPane.showMessageDialog(vista, "No se puede eliminar porque esta tarea ya se encuentra 'Inactiva'", "Advertencia", JOptionPane.WARNING_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(vista, "No se puede eliminar una tarea que ya está 'En curso'", "Error", JOptionPane.ERROR_MESSAGE);
+
+            int id = Integer.parseInt(vista.txtId.getText());
+            String estadoActual = vista.cbxEstado.getSelectedItem().toString();
+
+            // Alerta de advertencia obligatoria antes de cambiar el estado
+            int confirmacion = JOptionPane.showConfirmDialog(vista, 
+                    "Está a punto de dar de baja esta tarea. ¿Desea continuar?", 
+                    "Confirmar Baja Lógica", 
+                    JOptionPane.YES_NO_OPTION, 
+                    JOptionPane.WARNING_MESSAGE);
+
+            if (confirmacion == JOptionPane.YES_OPTION) {
+                try {
+                    // Ejecuta el UPDATE directo a 'Inactiva' a través de tu servicio
+                    service.darDeBaja(id);
+                    JOptionPane.showMessageDialog(vista, "Tarea dada de baja (Inactiva) exitosamente.");
+
+                    listar(); 
+                    limpiarFormulario();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(vista, "Error al procesar la baja lógica: " + ex.getMessage());
                 }
             }
         }
@@ -290,6 +292,44 @@ public class TareaControlador implements ActionListener, KeyListener {
 
         if (e.getSource() == vista.btnExportarPDF) {
             exportarAPDF();
+        }
+    }
+
+    /**
+     * Helper para procesar la llamada de guardado y mapear sus respuestas en la UI
+     */
+    private void ejecutarProcesoGuardado() {
+        try {
+            String resultado = guardado(); 
+            
+            switch (resultado) {
+                case "EXITO_REGISTRO":
+                    JOptionPane.showMessageDialog(vista, "Tarea registrada exitosamente");
+                    listar(); limpiarFormulario(); break;
+                case "EXITO_ACTUALIZACION":
+                    JOptionPane.showMessageDialog(vista, "Tarea actualizada exitosamente");
+                    listar(); limpiarFormulario(); break;
+                case "ERROR_CAMPOS_VACIOS":
+                    JOptionPane.showMessageDialog(vista, "Por favor, llene todos los campos obligatorios del formulario"); break;
+                case "ERROR_SELECCION_DIFICULTAD":
+                    JOptionPane.showMessageDialog(vista, "Por favor, elija un nivel de dificultad válido de la lista"); break;
+                case "ERROR_SELECCION_ESTADO":
+                    JOptionPane.showMessageDialog(vista, "Por favor, elija un estado válido para la tarea de la lista"); break;
+                case "ERROR_LONGITUD_EXCEDIDA":
+                    JOptionPane.showMessageDialog(vista, "Error de longitud: Nombre máx 50, Herramientas máx 150, Descripción máx 250 caracteres"); break;
+                case "ERROR_FORMATO_TEXTO":
+                    JOptionPane.showMessageDialog(vista, "Formato incorrecto: Use solo letras en Nombre/Herramientas"); break;
+                case "ERROR_RANGO_CUPO":
+                    JOptionPane.showMessageDialog(vista, "El cupo debe estar entre 1 y 50 voluntarios"); break;
+                case "ERROR_DATO_NUMERICO":
+                    JOptionPane.showMessageDialog(vista, "El cupo debe ser un valor numérico"); break;
+                case "ERROR_NOMBRE_DUPLICADO":
+                    JOptionPane.showMessageDialog(vista, "Error: El nombre de la tarea ya se encuentra registrado. Por favor, sea más específico (Ej: 'Limpieza de Parque Guayaquil')"); break;
+                default:
+                    JOptionPane.showMessageDialog(vista, "Error en la operación: " + resultado); break;
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(vista, "Error crítico de base de datos: " + ex.getMessage());
         }
     }
 }

@@ -4,28 +4,6 @@ import dao.TareaDAO;
 import java.util.List;
 import modelo.Tarea;
 import java.sql.SQLException;
-/**
- * Controlador principal del módulo de Sectores.
- * Es el "director de orquesta" que escucha los eventos de la interfaz gráfica (Vista)
- * y delega las operaciones de guardado, eliminación y búsqueda a la capa de Servicio.
- * Además, gestiona la generación de reportes en PDF.
- * Proyecto: Sistema de Gestión Ambiental (EcoVida)
- * 
- * @author Gabriela Solange Gonzalez Roman
- * @version 1.0
- * @since 2026-05-05
- */
-
-/**
- * Valida los datos ingresados en el formulario de sectores.
- * 
- * @param nombre nombre de la zona o sector.
- * @param provincia provincia o ciudad del sector.
- * @param riesgo nivel de riesgo seleccionado.
- * @param estado estado actual de la zona.
- * @return una cadena con los mensajes de error encontrados, si no existen errores retorna una cadena vacía.
- */
-
 
 /**
  * Clase de servicio que implementa la lógica de negocio para la gestión de tareas.
@@ -42,6 +20,10 @@ public class TareaService {
 
     public List<Tarea> listar() throws SQLException { 
         return dao.listar(); 
+    }
+    
+    public boolean existeNombreTarea(String nombre) throws Exception {
+    return dao.existeNombreTarea(nombre); 
     }
 
     public boolean agregar(Tarea t) throws SQLException {
