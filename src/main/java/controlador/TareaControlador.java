@@ -30,7 +30,6 @@ public class TareaControlador implements ActionListener, KeyListener {
         this.service = service;
         this.vista = vista;
 
-        // Registro de eventos de botones
         this.vista.btnGuardar.addActionListener(this);
         this.vista.btnActualizar.addActionListener(this);
         this.vista.btnEliminar.addActionListener(this);
@@ -38,11 +37,9 @@ public class TareaControlador implements ActionListener, KeyListener {
         this.vista.btnFiltrar.addActionListener(this);
         this.vista.btnExportarPDF.addActionListener(this);
         
-        // Registro de eventos de filtros y teclado
         this.vista.txtBuscar.addKeyListener(this);
         this.vista.cbxFiltroDificultad.addActionListener(this);
 
-        // Evento de selección en tabla
         this.vista.tablaTareas.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -91,7 +88,7 @@ public class TareaControlador implements ActionListener, KeyListener {
     }
 
     /**
-     * MÉTODO 1 PARA V&V: Procesa el guardado/actualización de tareas con validaciones robustas.
+     * METODO 1 PARA V Y V: Procesa el guardado/actualización de tareas con validaciones robustas.
      */
     public String guardado() throws Exception {
         String nombre = vista.txtNombre.getText().trim();
@@ -101,12 +98,10 @@ public class TareaControlador implements ActionListener, KeyListener {
         String dificultad = vista.cbxDificultad.getSelectedItem().toString();
         String estado = vista.cbxEstado.getSelectedItem().toString();
 
-        // 1. Validación de campos vacíos obligatorios
         if (nombre.isEmpty() || herramientas.isEmpty() || cupoStr.isEmpty() || descripcion.isEmpty()) {
             return "ERROR_CAMPOS_VACIOS";
         }
         
-        // 2. Validación de selección obligatoria en JComboBox
         if (dificultad.equals("Seleccionar...")) {
             return "ERROR_SELECCION_DIFICULTAD";
         }
@@ -115,17 +110,14 @@ public class TareaControlador implements ActionListener, KeyListener {
             return "ERROR_SELECCION_ESTADO";
         }
 
-        // 3. Validación de longitud máxima en campos de texto
         if (nombre.length() > 50 || herramientas.length() > 150 || descripcion.length() > 250) {
             return "ERROR_LONGITUD_EXCEDIDA";
         }
 
-        // 4. Validación de formatos alfabéticos con expresiones regulares
         if (!nombre.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$") || !herramientas.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ, ]+$")) {
             return "ERROR_FORMATO_TEXTO";
         }
 
-        // 5. Validación de rango numérico
         try {
             int cupo = Integer.parseInt(cupoStr);
             if (cupo < 1 || cupo > 50) {
@@ -135,7 +127,6 @@ public class TareaControlador implements ActionListener, KeyListener {
             return "ERROR_DATO_NUMERICO";
         }
 
-        // CANDADO 1: Validación de nombre duplicado en Base de Datos (Solo aplica al CREAR una nueva tarea)
         if (vista.txtId.getText().isEmpty()) {
             if (service.existeNombreTarea(nombre)) {
                 return "ERROR_NOMBRE_DUPLICADO";
@@ -228,12 +219,10 @@ public class TareaControlador implements ActionListener, KeyListener {
             limpiarFormulario();
         }
 
-        // Si se presiona Guardar, procesa directo las validaciones
         if (e.getSource() == vista.btnGuardar) {
             ejecutarProcesoGuardado();
         }
 
-        // CANDADO 2: Si se presiona Actualizar, suspende el hilo para la confirmación explícita
         if (e.getSource() == vista.btnActualizar) {
             int filaSeleccionada = vista.tablaTareas.getSelectedRow();
             if (filaSeleccionada == -1) {
@@ -250,7 +239,6 @@ public class TareaControlador implements ActionListener, KeyListener {
             if (confirmacion == JOptionPane.YES_OPTION) {
                 ejecutarProcesoGuardado();
             } else {
-                // REVERSIÓN VISUAL: Cancela y restaura los datos de la interfaz cargando de nuevo la fila seleccionada
                 cargarDatosFormulario();
                 JOptionPane.showMessageDialog(vista, "Actualización cancelada. Se han restaurado los valores originales en la interfaz.");
             }
@@ -265,7 +253,6 @@ public class TareaControlador implements ActionListener, KeyListener {
             int id = Integer.parseInt(vista.txtId.getText());
             String estadoActual = vista.cbxEstado.getSelectedItem().toString();
 
-            // Alerta de advertencia obligatoria antes de cambiar el estado
             int confirmacion = JOptionPane.showConfirmDialog(vista, 
                     "Está a punto de dar de baja esta tarea. ¿Desea continuar?", 
                     "Confirmar Baja Lógica", 
@@ -274,7 +261,6 @@ public class TareaControlador implements ActionListener, KeyListener {
 
             if (confirmacion == JOptionPane.YES_OPTION) {
                 try {
-                    // Ejecuta el UPDATE directo a 'Inactiva' a través de tu servicio
                     service.darDeBaja(id);
                     JOptionPane.showMessageDialog(vista, "Tarea dada de baja (Inactiva) exitosamente.");
 
@@ -295,9 +281,6 @@ public class TareaControlador implements ActionListener, KeyListener {
         }
     }
 
-    /**
-     * Helper para procesar la llamada de guardado y mapear sus respuestas en la UI
-     */
     private void ejecutarProcesoGuardado() {
         try {
             String resultado = guardado(); 
